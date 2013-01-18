@@ -1,0 +1,115 @@
+.directorium {
+	display: table;
+}
+
+.directorium td input {
+	width: 160px;
+}
+
+.directorium td.spaceleft {
+	padding-left: 2em;
+}
+
+.directorium table.horizontally-stackable {
+	float: left;
+	margin-right: 8px;
+}
+
+.directorium p span.highlight {
+	background: inherit;
+	color: #666;
+	display: inline-block;
+	font-weight: bold;
+	margin: 0px 2px;
+	padding: 0;
+	text-align: inherit;
+}
+
+.directorium .new-section {
+	clear: both;
+}
+
+#message .amendment-pending  {
+	background: transparent url("crystal-amendment-pending.png") no-repeat center left;
+	padding-left: 40px;
+	margin-left: 10px;
+	height: 30px;
+}
+
+#message .amendment-viewing {
+	background: transparent url("crystal-warning.png") no-repeat center left;
+	padding-left: 40px;
+	margin-left: 10px;
+	height: 30px;
+}
+
+table.listing-editorial-table {
+	float: left;
+	margin-right: 3em;
+	margin-bottom: 1.5em;
+}
+
+table.listing-editorial-table:last-child {
+	float: none;
+}
+
+table.listing-editorial-table input {
+	width: 6.5em;
+}
+
+table.listing-editorial-table th,
+table.listing-editorial-table td {
+	padding: 1px 8px 2px 1px;
+	text-align: left;
+	vertical-align: middle;
+}
+
+table.listing-editorial-table th {
+	color: #888;
+	padding-left: 0.5em;
+	padding-bottom: 4px;
+	padding-top: 0.9em;
+}
+
+table.listing-editorial-table td.textright {
+	text-align: right;
+}
+
+table.listing-editorial-table td pre {
+	margin: 0;
+}
+
+table.listing-editorial-table td div.usage-meter {
+	background: #fff;
+	border: 1px solid #aaa;
+	float: left;
+	margin-right: 0.3em;
+	padding: 1px;
+	height: 1em;
+	width: 100px;
+}
+
+table.listing-editorial-table td div.usage-meter div {
+	height: 1em;
+}
+
+table.listing-editorial-table td div.usage-meter div.within {
+	background: #20c040;
+}
+
+table.listing-editorial-table td div.usage-meter div.over {
+	background: #c02040;
+}
+
+table.listing-editorial-table td img.meter-flag {
+	height: 1em;
+}
+
+table.listing-editorial-table input.checkbox {
+	margin: 0em 0.5em;
+	width: auto;
+}
+
+table.listing-editorial-table .wp-media-buttons .insert-media {
+	margin-left: 0.5em;
+}
