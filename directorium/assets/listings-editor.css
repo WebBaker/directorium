@@ -113,3 +113,91 @@ table.listing-editorial-table input.checkbox {
 table.listing-editorial-table .wp-media-buttons .insert-media {
 	margin-left: 0.5em;
 }
+
+.ownerslist p.notice {
+	background: transparent url("crystal-warning.png") no-repeat center left;
+	color: #c05010;
+	padding-left: 40px;
+}
+
+div.scrollablelist {
+	max-height: 250px !important;
+	border: 1px solid #ddd;
+	overflow-y: scroll;
+}
+
+table.userlist {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+table.userlist td {
+	border-top: 1px solid #e0e0e0;
+	padding: 0.4em;
+}
+
+table.userlist tr td:first-child {
+	width: 2em;
+}
+
+table.userlist tr:first-child td {
+	border: 0;
+}
+
+table.userlist tr.stripe td {
+	background: #f2f3ff;
+}
+
+table.userlist td.actions {;
+	width: 1.5em;
+}
+
+table td.actions img,
+table.userlist td.actions img {
+	height: 1.22em;
+	width: 1.22em;
+}
+
+table.userlist tr td.actions img {
+	visibility: hidden;
+}
+
+table.userlist tr:hover td.actions img {
+	cursor: pointer;
+	visibility: visible;
+}
+
+table td.actions button {
+	background: none;
+	border: none;
+}
+
+ul.medialist li {
+	clear: both;
+	display: table;
+	margin-bottom: 1em;
+}
+
+ul.medialist li .mediapreview {
+	background: #ccc;
+	border: 1px solid #bbb;
+	float: left;
+	height: 112px;
+	line-height: 110px;
+	margin-right: 0.5em;
+	overflow: hidden;
+	text-align: center;
+	width: 110px;
+}
+
+ul.medialist li .mediapreview img {
+	vertical-align: middle;
+}
+
+ul.medialist li .mediasettings {
+	float: left;
+}
+
+ul.medialist li .mediasettings input.longfield {
+	width: 100%;
+}

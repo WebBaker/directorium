@@ -5,6 +5,9 @@ namespace Directorium;
 class Listing {
 	const CUSTOM_FIELDS = 'directorium_custom_fields';
 	const EDITORIAL_CONTROLS = 'directorium_editorial_meta';
+	const MEDIA_CONTROLS = 'directorium_media_meta';
+	const OWNER_CONTROLS = 'directorium_owner_meta';
+	const IMG_PREVIEW_SIZE = 'directorium_preview_thumb';
 	const POST_TYPE = 'directorium_listing';
 	const TAX_BUSINESS_TYPE = 'directorium_business_type';
 	const TAX_GEOGRAPHY = 'directorium_geography';
@@ -21,7 +24,6 @@ class Listing {
 	 * @var array
 	 */
 	protected static $postInstances = array();
-
 	protected static $postID = null;
 
 	/**
@@ -76,6 +78,7 @@ class Listing {
 	public static function register() {
 		add_action('init', array(__CLASS__, 'registerTaxonomies'), 20);
 		add_action('init', array(__CLASS__, 'registerPostType'), 30);
+		self::registerPreviewImageSize();
 
 		// Enqueue styles for both existing and new posts
 		add_action('admin_print_styles-post.php', array(__CLASS__, 'editorStyles'));
@@ -136,6 +139,8 @@ class Listing {
 		register_post_type(self::POST_TYPE, self::getTypeDefinition());
 		add_action('save_post', array(__CLASS__, 'saveCustomFields'));
 		add_action('save_post', array(__CLASS__, 'saveEditorialSettings'));
+		add_action('save_post', array(__CLASS__, 'saveOwnerSettings'));
+		add_action('save_post', array(__CLASS__, 'saveMediaChanges'));
 		add_filter('post_updated_messages', array(__CLASS__, 'editorMessages'));
 	}
 
@@ -183,6 +188,11 @@ class Listing {
 	}
 
 
+	public static function registerPreviewImageSize() {
+		add_image_size(self::IMG_PREVIEW_SIZE, 112, 112);
+	}
+
+
 	public static function editorStyles() {
 		wp_enqueue_style('directoriumEditor', Core::$plugin->url.'assets/listings-editor.css');
 	}
@@ -208,12 +218,23 @@ class Listing {
 			self::POST_TYPE,
 			'advanced'
 		);
-
 		add_meta_box(self::EDITORIAL_CONTROLS,
 			__('Editorial Controls', 'directorium'),
 		    array(__CLASS__, 'editorialControls'),
 			self::POST_TYPE,
 			'advanced'
+		);
+		add_meta_box(self::MEDIA_CONTROLS,
+			__('Attached Media', 'directorium'),
+			array(__CLASS__, 'mediaControls'),
+			self::POST_TYPE,
+			'advanced'
+		);
+		add_meta_box(self::OWNER_CONTROLS,
+			__('Listing Ownership', 'directorium'),
+			array(__CLASS__, 'ownerControls'),
+			self::POST_TYPE,
+			'side'
 		);
 	}
 
@@ -274,23 +295,76 @@ class Listing {
 	}
 
 
-	public static function alterMediaButton() {
-		add_action('media_buttons', array(__CLASS__, 'changeMediaButtonLabel'), 5);
+	public static function mediaControls() {
+		$listing = self::getPost(self::getListingID());
+		View::write('media-controls', array('listing' => $listing));
 	}
 
 
-	public static function changeMediaButtonLabel() {
-		add_filter('gettext', array(__CLASS__, 'mediaButtonFilter'), 20, 2);
-	}
+	public static function saveMediaChanges($postID) {
+		if (empty($_POST) or !is_admin() or !isset($_POST['directorium_fields_check'])) return;
+		if (wp_verify_nonce($_POST['directorium_media_check'], 'directorium_media_controls') === false) return;
+		if (!isset($_POST['attachment']) or !is_array($_POST['attachment'])) return;
 
+		foreach ($_POST['attachment'] as $attID => $fields) {
+			// Check for delete/detach requests
+			if ($fields['action'] !== 'do-nothing') self::detachMedia($attID, $fields['action']);
 
-	public static function mediaButtonFilter($translation, $original) {
-		if ($original === 'Add Media') {
-			remove_action('media_buttons', array(__CLASS__, 'changeMediaButtonLabel'), 5);
-			remove_filter('gettext', array(__CLASS__, 'mediaButtonFilter'), 10);
-			return __('Manage Media &amp; Attachments', 'directorium');
+			// Update attachment meta data
+			$data = wp_get_attachment_metadata($attID);
+			$data['image_meta']['caption'] = apply_filters('directorium_listing_attachment_caption', $fields['caption']);
+			$data['image_meta']['title'] = apply_filters('directorium_listing_attachment_title', $fields['title']);
+
+			wp_update_attachment_metadata($attID, $data);
 		}
-		return $translation;
+	}
+
+
+	/**
+	 * Detaches the media item from the post (if $nature === 'detach') or attempts to
+	 * complete delete it (if $nature === 'delete').
+	 *
+	 * @todo delete method (currently detaches regardless of $nature)
+	 *
+	 * @param $mediaID
+	 * @param string $nature = 'detach'
+	 */
+	protected static function detachMedia($mediaID, $nature = 'detach') {
+    	switch($nature) {
+			case 'detach':
+				wp_update_post(array(
+					'ID' => $mediaID,
+					'post_parent' => 0
+				));
+			break;
+
+			case 'delete':
+				wp_delete_post($mediaID, true);
+			break;
+		}
+	}
+
+
+	public static function ownerControls() {
+		$listing = self::getPost(self::getListingID());
+		$owners = Owners::whoOwnsThis($listing->id);
+		$userAdminLink = get_admin_url(null, 'users.php');
+		View::write('owner-controls', array('listing' => $listing, 'owners' => $owners));
+	}
+
+
+	public static function saveOwnerSettings($postID) {
+		if (empty($_POST) or !is_admin() or !isset($_POST['directorium_fields_check'])) return;
+		if (wp_verify_nonce($_POST['directorium_owner_check'], 'directorium_owner_controls') === false) return;
+
+		// Add new owners
+		$ids = Utility::parseCSVidList($_POST['addownerids']);
+		foreach ($ids as $userID)
+			Owners::addOwnership($userID, $postID);
+
+		// Delete owners
+		if (isset($_POST['removeowner']))
+			Owners::removeOwnership(absint($_POST['removeowner']), $postID);
 	}
 
 
@@ -356,6 +430,7 @@ class Listing {
 
 	public function __construct($id = null) {
 		if ($id !== null) $this->load($id);
+		do_action('directorium_listing_initialized', $this);
 	}
 
 

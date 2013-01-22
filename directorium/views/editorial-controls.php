@@ -30,13 +30,6 @@
 		<input type="checkbox" name="enablecontactform" id="enablecontactform" class="checkbox" />
 		<label for="enablecontactform"><?php _e('Enable contact form', 'directorium') ?></label>
 	</td> </tr>
-	<tr> <th> <?php _e('Images and Videos', 'directorium') ?> </th> </tr>
-	<tr> <td> <div class="wp-media-buttons">
-		<?php
-		Listing::alterMediaButton();
-		do_action('media_buttons', 'content');
-		?>
-	</div> </td> </tr>
 	</tbody>
 </table>
 

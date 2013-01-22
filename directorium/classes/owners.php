@@ -74,8 +74,7 @@ class Owners {
 				)),
 			'fields' => 'ID'));
 
-		if ($owners instanceof WP_User_Query) return (array) $owners->results;
-		return array();
+		return (array) $owners->results;
 	}
 
 
