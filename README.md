@@ -11,4 +11,4 @@ in that task.
 
 #### Status
 
-Directorium is in the early stages of development, it's not complete nor is it intended to be used on a live site.
+Directorium is in te early stages of development, it's not complete nor is it intended to be used on a live site.
