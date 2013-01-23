@@ -1,0 +1,28 @@
+@import "common-admin-style.css";
+
+ul.settingslist {
+	display: table;
+}
+
+ul.settingslist li {
+	display: table-row;
+}
+
+ul.settingslist li div {
+	display: table-cell;
+	padding: 0.24em 0.6em 0.24em 0em;
+}
+
+div#settings-actions {
+	background: #fafbff;
+	border: 1px solid #ddd;
+	float: right;
+	margin-left: 1em;
+	margin-right: 1em;
+	padding: 0.5em 0.9em;
+	width: 30%;
+}
+
+div#settings-actions p:first-child {
+	margin-top: 0;
+}

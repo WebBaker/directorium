@@ -337,7 +337,7 @@ class Importer {
 	public function registerPage() {
 		$parent = 'edit.php?post_type='.Listing::POST_TYPE;
 		$title = __('Importer', 'directorium');
-		$capability = apply_filters('directoriumImportCapability', 'import');
+		$capability = apply_filters('directorium_import_capability', 'import');
 
 		$this->handle = add_submenu_page($parent, $title, $title, $capability, 'import', array($this, 'controller'));
 		add_action('admin_head-'.$this->handle, array($this, 'lineUpResources'));

@@ -39,8 +39,11 @@ class Core {
 
 	public function loadComponents() {
 		Listing::register();
+		new Settings;
 		new AmendmentsManager;
 		new Importer;
+		new FrontAdmin;
+
 	}
 }
 

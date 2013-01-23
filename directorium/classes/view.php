@@ -33,9 +33,18 @@ class View {
 	}
 
 
+	/**
+	 * Intelligently determines the path to the view (in views/admin for admin requests
+	 * or else views/public).
+	 *
+	 * @todo cascading template system: allow theme template overrides
+	 *
+	 * @param $view
+	 */
 	protected function makePath($view) {
 		$path = str_replace('.', '', $view);
-		$path = Core::$plugin->dir."/views/$path.php";
+		$type = (is_admin()) ? '/views/admin' : '/views/public';
+		$path = Core::$plugin->dir."$type/$path.php";
 
 		if (file_exists($path)) $this->path = $path;
 	}
