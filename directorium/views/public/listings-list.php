@@ -10,9 +10,16 @@ use Directorium\Listing as Listing;
 
 		<ul> <?php foreach ($listings as $listingID): ?>
 
-			<?php $listing = Listing::getPost($listingID) ?>
+			<?php
+				$listing = Listing::getPost($listingID);
+				$editorLink = $public->editorLink($listingID);
+			?>
 
-		   <li> <?php esc_html_e($listing->post->post_title) ?> </li>
+			<li>
+				<a href="<?php esc_attr_e($editorLink) ?>" title="<?php _e('Edit this listing', 'directorium') ?>">
+					<?php esc_html_e($listing->post->post_title) ?>
+				</a>
+			</li>
 
 		<?php endforeach ?> </ul>
 

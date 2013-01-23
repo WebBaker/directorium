@@ -4,10 +4,6 @@
 .directorium table td:FIRST-CHILD { padding-right: 10px; width: 20%; }
 .directorium table td.final { width: 50%; }
 .directorium table td.final h4 { margin-top: 0px; }
-.directorium .notices .notice {
-	border: 1px solid #a09a01;
-	background: #fff2bb;
-}
 
 .directorium #cleanup-action {
 	border: 1px solid #50a096;

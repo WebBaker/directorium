@@ -6,6 +6,7 @@ class Core {
 	public static $plugin = null;
 	public $dir;
 	public $url;
+	public $settings;
 
 
 	public static function init() {
@@ -39,7 +40,7 @@ class Core {
 
 	public function loadComponents() {
 		Listing::register();
-		new Settings;
+		$this->settings = new Settings;
 		new AmendmentsManager;
 		new Importer;
 		new FrontAdmin;

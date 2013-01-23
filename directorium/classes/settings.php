@@ -5,6 +5,7 @@ namespace Directorium;
 class Settings {
 	protected $notices = array();
 	protected $settings = array();
+	protected $setCalled = false;
 
 
 
@@ -28,6 +29,8 @@ class Settings {
 				// Update
 				$this->set(implode('.', $setting), $value);
 			}
+			$this->save();
+			$this->notices['info'][] = __('Settings have been updated', 'directorium');
 		}
 	}
 
@@ -117,11 +120,23 @@ class Settings {
 
 		$group = $setting[0];
 		$key = $setting[1];
-		$setting = 'directoriumSetting'.ucfirst($group);
 
-		$dbsettings = (array) get_option($setting, array());
-		$dbsettings[$key] = $value;
+		$this->settings[$group][$key] = $value;
+	}
 
-		return update_option($setting, $dbsettings);
+
+	public function __destruct() {
+		if ($this->setCalled) $this->save();
+	}
+
+
+	public function save() {
+		foreach ($this->settings as $group => $keyValues) {
+			$setting = 'directoriumSetting'.ucfirst($group);
+			$dbsettings = (array) get_option($setting, array());
+			$newsettings = array_merge($dbsettings, $keyValues);
+			update_option($setting, $newsettings);
+		}
+		$this->setCalled = false;
 	}
 }

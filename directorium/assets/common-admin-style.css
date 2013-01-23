@@ -6,4 +6,8 @@ div.icon32,
 	background-position: 0 0;
 }
 
+.directorium .notices .notice {
+    border: 1px solid #a09a01;
+    background: #fff2bb;
+}
 .directorium .notices p { padding: 1px 10px; }
