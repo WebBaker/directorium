@@ -52,17 +52,42 @@ class FrontAdmin {
 	protected function editListing() {
 		$currentUser = wp_get_current_user();
 		$isLoggedIn = false;
-		$listing = new Listing($_REQUEST['listing']);
+		$listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
+		$listing = new Listing($listingID);
 
 		if (is_a($currentUser, 'WP_User') and $currentUser->exists())
 			$isLoggedIn = true;
 
-		return new View('listings-editor', array(
+		$tplVars = array(
 			'public' => $this,
 			'user' => $currentUser,
 			'isLoggedIn' => $isLoggedIn,
 			'listing' => $listing
-		));
+		);
+
+		$tplVars = array_merge($tplVars, $this->editorFieldVars($listing));
+		return new View('listings-editor', $tplVars);
+	}
+
+
+	/**
+	 * Populates the variables used for key post variables in the editor.
+	 */
+	protected function editorFieldVars($listing) {
+		$defaults = array('title', 'content');
+		$defaults = array_fill_keys($defaults, '');
+
+		if (isset($listing->post)) foreach ($defaults as $key => $value) {
+			$postfield = "post_$key";
+			if (isset($listing->post->$postfield)) $defaults[$key] = $listing->post->postfield;
+		}
+
+		foreach ($defaults as $key => $value) {
+			$postkey = "listing$key";
+			if (isset($_POST[$postkey])) $defaults[$key] = $_POST[$postkey];
+		}
+
+		return $defaults;
 	}
 
 

@@ -7,12 +7,12 @@ use Directorium\View as View;
 
 	<section class="title">
 		<label for="listingtitle"> <?php _e('Title', 'directorium') ?> </label>
-		<input type="text" name="listingtitle" id="listingtitle" value="<?php esc_attr_e($listing->post->post_title) ?>" />
+		<input type="text" name="listingtitle" id="listingtitle" value="<?php esc_attr_e($title) ?>" />
 	<section>
 
 	<section class="content">
-		<label for="listingtext"> <?php _e('Your listing content', 'directorium') ?> </label>
-		<textarea name="listingtext" id="listingtext" cols="80" rows="10"><?php esc_html_e($listing->post->post_content) ?></textarea>
+		<label for="listingcontent"> <?php _e('Your listing content', 'directorium') ?> </label>
+		<textarea name="listingcontent" id="listingcontent" cols="80" rows="10"><?php esc_html_e($content) ?></textarea>
 	</section>
 
 	<section class="geographies">
