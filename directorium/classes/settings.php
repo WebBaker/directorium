@@ -19,7 +19,12 @@ class Settings {
 
 	protected function saveChanges() {
 		if (isset($_POST['directoriumSettings']) and wp_verify_nonce($_POST['directoriumSettings'], 'directorySettings')) {
-			foreach($_POST as $key => $value) {
+			// Ensure we have all expected fields (to account for checkbox fields which will not
+			// be submitted when unchecked, for example)
+			$expected = $this->getExpectedPostFields();
+			$post = array_merge($expected, $_POST);
+
+			foreach($post as $key => $value) {
 				// Settings are prefixed __ check for that and knock it off the start
 				if (strpos($key, '__') !== 0) continue;
 				$key = substr($key, 2);
@@ -87,6 +92,24 @@ class Settings {
 				do_action($action, $item[0], $item[1]); // $data, $label
 			}
 		}
+	}
+
+
+	/**
+	 * Returns an array listing all expected settings fields as key:values
+	 * (the values being empty strings).
+	 *
+	 * @return array
+	 */
+	protected function getExpectedPostFields() {
+		$expectedDefinitions = $this->returnArrayFile(Core::$plugin->dir.'/config/options.php');
+		$expectedFields = array();
+
+		foreach ($expectedDefinitions as $group)
+			foreach ($group[0] as $key)
+				$expectedFields[] = '__'.str_replace('.', '_', $key);
+
+		return array_fill_keys($expectedFields, '');
 	}
 
 
@@ -222,6 +245,15 @@ class Settings {
 			'label' => $label,
 			'key' => $data[0],
 			'value' => $data[1]
+		));
+	}
+
+
+	public function printCheckboxField($data, $label) {
+		View::write('settings-field-checkbox', array(
+			'label' => $label,
+			'key' => $data[0],
+			'value' => ($data[1] === '1') ? 1 : 0
 		));
 	}
 }

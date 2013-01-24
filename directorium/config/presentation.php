@@ -2,7 +2,7 @@
 namespace Directorium;
 
 
-$stringRenderer = array($settings, 'printStringField');
+$checkboxRenderer = array($settings, 'printCheckboxField');
 
 /**
  * Presentation configuration array.
@@ -14,12 +14,12 @@ return array(
 		true,
 		__('Enable default styles', 'directorium'),
 		false,
-		$stringRenderer
+		$checkboxRenderer
 	),
 	'enableThemeStyles' => array(
 		false,
 		__('Enable theme styles', 'directorium'),
 		false,
-		$stringRenderer
+		$checkboxRenderer
 	)
 );

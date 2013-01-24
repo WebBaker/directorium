@@ -746,12 +746,13 @@ class Listing {
 
 		// Build a list of all terms from this taxonomy *applied* to this listing
 		$applied = array();
-		foreach ($this->postTerms[$taxonomy] as $term)
-			$applied[] = $term->term_id;
+		if (isset($this->postTerms[$taxonomy]))
+			foreach ($this->postTerms[$taxonomy] as $term)
+				$applied[] = $term->term_id;
 
 		// Now restructure $allTerms so that each array key === term_id
 		$orderedTerms = array();
-		foreach ($allTerms as $key => $termObject)
+		foreach ($allTerms as $termObject)
 			$orderedTerms[$termObject->term_id] = $termObject;
 
 		// Lets create a new array of terms with children nested under parents
