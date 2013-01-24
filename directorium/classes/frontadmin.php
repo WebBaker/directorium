@@ -54,11 +54,13 @@ class FrontAdmin {
 		$isLoggedIn = false;
 		$listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
 		$listing = new Listing($listingID);
+		$core = Core::$plugin;
 
 		if (is_a($currentUser, 'WP_User') and $currentUser->exists())
 			$isLoggedIn = true;
 
 		$tplVars = array(
+			'action' => $this->getEditorFormAction(),
 			'public' => $this,
 			'user' => $currentUser,
 			'isLoggedIn' => $isLoggedIn,
@@ -67,6 +69,17 @@ class FrontAdmin {
 
 		$tplVars = array_merge($tplVars, $this->editorFieldVars($listing));
 		return new View('listings-editor', $tplVars);
+	}
+
+
+	protected function getEditorFormAction() {
+		$core = Core::$plugin;
+		$baseURL = $core->settings->get('general.editorPage');
+
+		if (isset($_GET['listing'])) $query = array('listing' => absint($_GET['listing']));
+		else $query = null;
+
+		return URL::generate($baseURL, $query);
 	}
 
 
@@ -79,7 +92,7 @@ class FrontAdmin {
 
 		if (isset($listing->post)) foreach ($defaults as $key => $value) {
 			$postfield = "post_$key";
-			if (isset($listing->post->$postfield)) $defaults[$key] = $listing->post->postfield;
+			if (isset($listing->post->$postfield)) $defaults[$key] = $listing->post->$postfield;
 		}
 
 		foreach ($defaults as $key => $value) {

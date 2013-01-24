@@ -3,7 +3,8 @@ use Directorium\Listing as Listing;
 use Directorium\View as View;
 ?>
 
-<div class="directorium listing-editor" xmlns="http://www.w3.org/1999/html">
+<div class="directorium listing-editor">
+	<form action="<?php esc_attr_e($action) ?>" method="post" enctype="multipart/form-data">
 
 	<section class="title">
 		<label for="listingtitle"> <?php _e('Title', 'directorium') ?> </label>
@@ -35,5 +36,7 @@ use Directorium\View as View;
 		<input type="submit" name="submit" value="<?php esc_attr_e('Submit', 'directorium') ?>" />
 		<input type="submit" name="take-offline" value="<?php esc_attr_e('Take offline', 'directorium') ?>" />
 	</section>
+
+	</form>
 </div>
 

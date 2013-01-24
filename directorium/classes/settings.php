@@ -124,7 +124,7 @@ class Settings {
 	 * @param $print = false
 	 * @return mixed (null if not found)
 	 */
-	public function get($key, $print = true) {
+	public function get($key, $print = false) {
 		$parts = explode('.', $key);
 		if (count($parts) !== 2) return null;
 
