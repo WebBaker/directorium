@@ -6,7 +6,7 @@ use Directorium\Listing as Listing;
 
 	<?php if (count($listings) > 0): ?>
 
-		<p> <?php _e('You currently have umpteen listings.', 'directorium') ?> </p>
+		<p> <?php printf(_n('You currently have %d listing.', 'You currently have %d listings.', count($listings), 'directorium'), count($listings)) ?> </p>
 
 		<ul> <?php foreach ($listings as $listingID): ?>
 

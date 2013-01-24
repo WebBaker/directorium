@@ -733,6 +733,52 @@ class Listing {
 
 
 	/**
+	 * Returns an array of all the taxonomy terms (must be a hierarchical taxonomy such
+	 * as geography/business type) and annotates by assigning true or false if the term
+	 * is in use.
+	 *
+	 * @param $taxonomy
+	 * @return array
+	 */
+	public function annotatedTaxonomyList($taxonomy) {
+		$this->getTaxonomyTerms($taxonomy);
+		$allTerms = get_terms($taxonomy, array('hide_empty' => false));
+
+		// Build a list of all terms from this taxonomy *applied* to this listing
+		$applied = array();
+		foreach ($this->postTerms[$taxonomy] as $term)
+			$applied[] = $term->term_id;
+
+		// Now restructure $allTerms so that each array key === term_id
+		$orderedTerms = array();
+		foreach ($allTerms as $key => $termObject)
+			$orderedTerms[$termObject->term_id] = $termObject;
+
+		// Lets create a new array of terms with children nested under parents
+		$terms = $orderedTerms;
+		while (list($id, $individualTerm) = each($orderedTerms)) {
+			// Has this term been applied to this listing?
+			$terms[$id]->in_use = in_array($id, $applied);
+
+			// Make sure each term has a children property as an empty array
+			if (!isset($terms[$id]->children)) $terms[$id]->children = array();
+			$parent = (int) $individualTerm->parent;
+
+			// Does the current term have a parent?
+			if ($parent > 0) {
+				// Second opportunity to make sure it has a chilren property
+				if (!isset($terms[$parent]->children)) $terms[$parent]->children = array();
+
+				$terms[$parent]->children[$id] = $individualTerm; // Reposition
+				unset($terms[$id]); // Clean up
+			}
+		}
+
+		return $terms;
+	}
+
+
+	/**
 	 * Returns a list of terms applied to this listing from the specified taxonomy.
 	 *
 	 * @param $taxonomy

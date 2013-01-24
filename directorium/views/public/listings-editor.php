@@ -1,3 +1,8 @@
+<?php
+use Directorium\Listing as Listing;
+use Directorium\View as View;
+?>
+
 <div class="directorium listing-editor" xmlns="http://www.w3.org/1999/html">
 
 	<section class="title">
@@ -11,11 +16,11 @@
 	</section>
 
 	<section class="geographies">
-		<!-- List of geographies here -->
+		<?php View::write('taxonomy-selector', array('terms' => $listing->annotatedTaxonomyList(Listing::TAX_GEOGRAPHY))) ?>
 	</section>
 
 	<section class="businesstypes">
-		<!-- List of business types here -->
+		<?php View::write('taxonomy-selector', array('terms' => $listing->annotatedTaxonomyList(Listing::TAX_BUSINESS_TYPE))) ?>
 	</section>
 
 	<section class="media">

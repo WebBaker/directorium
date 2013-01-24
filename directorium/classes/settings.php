@@ -3,8 +3,10 @@ namespace Directorium;
 
 
 class Settings {
+	public $config = array();
+	public $settings = array();
+
 	protected $notices = array();
-	protected $settings = array();
 	protected $setCalled = false;
 
 
@@ -30,6 +32,7 @@ class Settings {
 				$this->set(implode('.', $setting), $value);
 			}
 			$this->save();
+			$this->clear();
 			$this->notices['info'][] = __('Settings have been updated', 'directorium');
 		}
 	}
@@ -68,10 +71,22 @@ class Settings {
 	public function controller() {
 		View::write('frame', array(
 			'action' => get_admin_url(null, 'edit.php?post_type='.Listing::POST_TYPE.'&page=settings'),
-			'content' => new View('settings-general', array('settings' => $this)),
+			'content' => new View('settings', array('settings' => $this)),
 			'title' => __('Directory Settings', 'directorium'),
 			'notices' => $this->notices
 		));
+	}
+
+
+	public function renderAll($group) {
+		$this->loadConfig($group);
+
+		if (isset($this->config[$group])) {
+			foreach ($this->config[$group] as $key => $item) {
+				$action = 'directorium_print_setting_'.strtolower($group.'_'.$key);
+				do_action($action, $item[0], $item[1]); // $data, $label
+			}
+		}
 	}
 
 
@@ -79,10 +94,14 @@ class Settings {
 	 * Returns a setting value relating to a key in group.item format, such as
 	 * "general.directorySlug".
 	 *
+	 * If optional param $print is true then the renderer/printer callback will
+	 * also be called.
+	 *
 	 * @param $key
+	 * @param $print = false
 	 * @return mixed (null if not found)
 	 */
-	public function get($key) {
+	public function get($key, $print = true) {
 		$parts = explode('.', $key);
 		if (count($parts) !== 2) return null;
 
@@ -90,17 +109,35 @@ class Settings {
 		if (!isset($this->settings[$parts[0]])) $this->loadConfig($parts[0]);
 		if (!isset($this->settings[$parts[0]][$parts[1]])) return null;
 
-		// Filter and return
+		// Filter
 		$filter = strtolower('directorium_setting_'.str_replace('.', '_', $key));
 		$setting = $this->settings[$parts[0]][$parts[1]];
-		return apply_filters($filter, $setting);
+		$setting = apply_filters($filter, $setting);
+
+		// Optionally call the printer
+		if ($print) {
+			$action = strtolower('directorium_print_setting_'.str_replace('.', '_', $key));
+			$data = array($key, $setting);
+			$label = $this->config[$parts[0]][$parts[1]][1];
+			do_action($action, $data, $label);
+		}
+
+		return $setting;
 	}
 
 
 	protected function loadConfig($group) {
+		// Get base definitions (from the plugin's config files)
 		$path = Core::$plugin->dir.'/config/'.$group.'.php';
-		if (file_exists($path)) $settings = $this->returnArrayFile($path);
-		else $settings = array();
+		if (file_exists($path)) $config = $this->returnArrayFile($path);
+		else $config = array();
+
+		// Allow other settings to be registered for the same group
+		$filter = 'directorium_group_setting_'.strtolower($group);
+		$this->config[$group] = $config = apply_filters($filter, $config);
+
+		// Set up validation callbacks/printer callbacks and derive list of raw settings
+		$settings = $this->prepareSettings($group, $config);
 
 		$dbsettings = (array) get_option('directoriumSetting'.ucfirst($group), array());
 		$settings = array_merge($settings, $dbsettings);
@@ -110,7 +147,27 @@ class Settings {
 
 
 	protected function returnArrayFile($path) {
+		$settings = $this; // Provide access to this object
 		return (array) include $path;
+	}
+
+
+	protected function prepareSettings($group, array $config) {
+		$settings = array();
+
+		foreach ($config as $item => $params) {
+			$settings[$item] = $params[0];
+
+			// Validation callback?
+			if (isset($params[2]) and $params[2] !== false)
+				add_filter('directorium_update_setting_'.strtolower($group.'_'.$item), $params[2]);
+
+			// Printer callback?
+			if (isset($params[3]) and $params[3] !== false)
+				add_action('directorium_print_setting_'.strtolower($group.'_'.$item), $params[3], 10, 2);
+		}
+
+		return $settings;
 	}
 
 
@@ -121,7 +178,12 @@ class Settings {
 		$group = $setting[0];
 		$key = $setting[1];
 
+		// Validation/sanitization opportunity
+		$filter = strtolower(implode('.', $setting));
+		$value = apply_filters('directorium_update_setting_'.$filter, $value);
+
 		$this->settings[$group][$key] = $value;
+		$this->setCalled = true;
 	}
 
 
@@ -138,5 +200,28 @@ class Settings {
 			update_option($setting, $newsettings);
 		}
 		$this->setCalled = false;
+	}
+
+
+	protected function clear() {
+		$this->config = array();
+		$this->settings = array();
+	}
+
+
+	public function printSection($data, $label) {
+		View::write('settings-section', array(
+			'label' => $label,
+			'settings' => $this,
+			'keys' => $data
+		));
+	}
+
+	public function printStringField($data, $label) {
+		View::write('settings-field-string', array(
+			'label' => $label,
+			'key' => $data[0],
+			'value' => $data[1]
+		));
 	}
 }
