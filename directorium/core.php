@@ -39,13 +39,12 @@ class Core {
 
 
 	public function loadComponents() {
-		Listing::register();
 		$this->settings = new Settings;
+		new ListingAdmin;
 		new AmendmentsManager;
 		new Importer;
 		new Frontend;
 		new FrontAdmin;
-
 	}
 }
 
