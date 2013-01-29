@@ -496,6 +496,7 @@ class Listing {
 	 * setField() ... others will be created as regular post custom fields.
 	 *
 	 * @param array $postdata
+	 * @return mixed (false if doing it wrong)
 	 */
 	public function safeAmendment(array $postdata) {
 		// A listing must already have been loaded or this will fail
@@ -794,5 +795,23 @@ class Listing {
 
 		$this->postTerms[$taxonomy] = (array) wp_get_post_terms($this->id, $taxonomy);
 		return $this->postTerms[$taxonomy];
+	}
+
+
+	/**
+	 * Returns an array of Field objects (representing the existing custom fields).
+	 *
+	 * @return array
+	 */
+	public function getCustomFields() {
+		$fieldGroups = array();
+
+		foreach (self::$customFields as $definition) {
+			$field = new Field($definition[0], $definition[1], $definition[2], null, $this->getField($definition[0]));
+			$key = isset($definition[self::FIELD_GROUP]) ? $definition[self::FIELD_GROUP] : 'misc';
+			$fieldGroups[$key][] = $field;
+		}
+
+		return $fieldGroups;
 	}
 }

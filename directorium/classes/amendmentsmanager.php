@@ -15,6 +15,7 @@ class AmendmentsManager {
 
 	public function __construct() {
 		add_action('admin_head-post.php', array($this, 'flipToAmendment'));
+		add_action('directorium_viewing_listing', array($this, 'flipToAmendment'));
 		add_action('submitpost_box', array($this, 'insertAmendmentMarker'));
 		add_action('save_post', array($this, 'makeAmendmentLive'));
 	}
@@ -24,25 +25,35 @@ class AmendmentsManager {
 	 * If the amended version of a (Listing) post has been requested and is
 	 * available then this method injects it into the $post global and the WP
 	 * cache (in order to make custom field data available also).
+	 *
+	 * When used outside of the post editor (ie, within the admin environment)
+	 * a Listing object can be passed in.
 	 */
-	public function flipToAmendment() {
-		if (!isset($_GET['loadalternative']) or $_GET['loadalternative'] !== 'amendment') return;
-		if (!isset($GLOBALS['post']) or !is_object($GLOBALS['post'])) return;
+	public function flipToAmendment($listing = null) {
+		if (!is_a($listing, 'Directorium\\Listing')) {
+			if (!isset($_GET['loadalternative']) or $_GET['loadalternative'] !== 'amendment') return;
+			if (!isset($GLOBALS['post']) or !is_object($GLOBALS['post'])) return;
+			$this->listing = Listing::getPost(Listing::getListingID());
+		}
+		else {
+			$this->listing = $listing;
+		}
 
-		$this->listing = Listing::getPost(Listing::getListingID());
 		$this->amendment = $this->listing->getAmendmentData();
 		$this->isAmendment = true;
 
-		$this->swapPostFields();
+		$this->swapPostFields($listing);
 		$this->injectCustomFields();
 	}
 
 
 	/**
-	 * Alters any of the post fields for which we have an amendment.
+	 * Alters any of the post fields for which we have an amendment. Operates on the global
+	 * $post object unless a Listing object is passed in.
 	 */
-	protected function swapPostFields() {
-		global $post;
+	protected function swapPostFields($listing = null) {
+		if (!is_a($listing, 'Directorium\\Listing')) global $post;
+		else $post = $listing->post;
 
 		// Change the post object and leave the amendment array only with custom fields
 		foreach ($post as $field => $value)

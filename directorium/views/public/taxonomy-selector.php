@@ -27,6 +27,11 @@ $iterator = function($term, $iterator, $level = 0) {
 		$iterator($child, $iterator, $level + 1);
 }
 ?>
-<div class="tax-selector-box">
-	<table> <?php foreach ($terms as $term) $iterator($term, $iterator); ?> </table>
+
+<div class="option-box">
+	<label> <?php esc_html_e($label) ?> </label>
+
+	<div class="tax-selector-box">
+		<table> <?php foreach ($terms as $term) $iterator($term, $iterator); ?> </table>
+	</div>
 </div>

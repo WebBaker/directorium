@@ -43,6 +43,7 @@ class Core {
 		$this->settings = new Settings;
 		new AmendmentsManager;
 		new Importer;
+		new Frontend;
 		new FrontAdmin;
 
 	}

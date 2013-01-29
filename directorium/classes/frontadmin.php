@@ -54,7 +54,10 @@ class FrontAdmin {
 		$isLoggedIn = false;
 		$listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
 		$listing = new Listing($listingID);
-		$core = Core::$plugin;
+
+		// Load the amended version (if one exists)
+		if ($listing->hasPendingAmendment())
+			do_action('directorium_viewing_listing', $listing);
 
 		if (is_a($currentUser, 'WP_User') and $currentUser->exists())
 			$isLoggedIn = true;
