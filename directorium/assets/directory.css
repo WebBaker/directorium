@@ -1,0 +1,90 @@
+/* Listing editor (general) */
+
+.directorium.listing-editor {
+	display: table;
+	width: 100%;
+}
+
+.directorium.listing-editor section {
+	display: table;
+	padding: 2%;
+	width: 100%;
+}
+
+.directorium.listing-editor .half-width {
+	width: 47%;
+}
+
+.directorium.listing-editor .full-width {
+	width: 94%;
+}
+
+.directorium.listing-editor label {
+	display: block;
+}
+
+.directorium.listing-editor textarea {
+	border: 1px solid #ccc;
+	border-radius: 0px;
+	height: 18em;
+}
+
+.directorium.listing-editor section.fields,
+.directorium.listing-editor .option-box {
+	float: left;
+	margin-right: 5%;
+	width: 45%;
+}
+
+/* Taxomony selector boxes */
+
+.directorium.listing-editor section.taxonomies .tax-selector-box {
+	border: 1px solid #ccc;
+	height: 11em;
+	max-height: 11em;
+	overflow-y: auto;
+}
+
+.directorium.listing-editor section.taxonomies .tax-selector-box:last-child {
+	margin-right: 0%;
+}
+
+.directorium.listing-editor section.taxonomies .tax-selector-box table {
+	margin: 2.5%;
+	width: 95%;
+}
+
+.directorium.listing-editor section.taxonomies .tax-selector-box span.level-spacers {
+	color: transparent;
+	padding: 0.5em;
+}
+
+/* Directory custom fields */
+
+.directorium.listing-editor section.fields input {
+	margin-bottom: 1em;
+	width: 98%;
+}
+
+/* Directory editor controls */
+
+.directorium.listing-editor section.controls input.positive-action {
+	background: #bfb;
+	border: 1px solid #9ba;
+	float: left;
+}
+
+.directorium.listing-editor section.controls input.requires-caution {
+	background: #fc8;
+	border: 1px solid #cb6;
+	float: right;
+	margin-right: 2em;
+}
+
+.directorium.listing-editor section.controls input.dangerous-action {
+	background: #e61;
+	border: 1px solid #866;
+	color: #fff;
+	float: right;
+	margin-right: 2em;
+}
