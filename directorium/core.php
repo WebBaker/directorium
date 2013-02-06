@@ -6,7 +6,13 @@ class Core {
 	public static $plugin = null;
 	public $dir;
 	public $url;
+	public $listingAdmin;
 	public $settings;
+	public $amendmentsManager;
+	public $importer;
+	public $frontend;
+	public $frontAdmin;
+
 
 
 	public static function init() {
@@ -40,13 +46,26 @@ class Core {
 
 	public function loadComponents() {
 		$this->settings = new Settings;
-		new ListingAdmin;
-		new AmendmentsManager;
-		new Importer;
-		new Frontend;
-		new FrontAdmin;
+		$this->listingAdmin = new ListingAdmin;
+		$this->amendmentsManager = new AmendmentsManager;
+		$this->importer = new Importer;
+		$this->frontend = new Frontend;
+		$this->frontAdmin = new FrontAdmin;
 	}
 }
 
 
 Core::init();
+
+
+// Core functions follow...
+
+/**
+ * Returns the Core Plugin object. This is just a convenience, it can anyway
+ * be accessed via \Directorium\Core::$plugin.
+ *
+ * @return \Directorium\Core
+ */
+function core() {
+	return Core::$plugin;
+}

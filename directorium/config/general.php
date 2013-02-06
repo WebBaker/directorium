@@ -3,6 +3,8 @@ namespace Directorium;
 
 
 $stringRenderer = array($settings, 'printStringField');
+$checkboxRenderer = array($settings, 'printCheckboxField');
+
 
 /**
  * General configuration array.
@@ -39,5 +41,11 @@ return array(
 		__('Listing editor page', 'directorium'),
 		false,
 		$stringRenderer
+	),
+	'disablePostRevisions' => array(
+		true,
+		__('Disable post revisions for listings', 'directorium'),
+		false,
+		$checkboxRenderer
 	)
 );

@@ -54,7 +54,8 @@ class ListingAdmin {
 
 	public function __construct() {
 		add_action('init', array($this, 'registerTaxonomies'), 20);
-		add_action('init', array($this, 'registerPostType'), 30);
+		add_action('init', array($this, 'registerPostTypes'), 30);
+		add_action('admin_enqueue_scripts', array($this, 'controlAutosaves'), 5);
 		$this->registerPreviewImageSize();
 
 		// Enqueue styles for both existing and new posts
@@ -131,8 +132,10 @@ class ListingAdmin {
 	}
 
 
-	public function registerPostType() {
+	public function registerPostTypes() {
 		register_post_type(Listing::POST_TYPE, $this->getTypeDefinition());
+		register_post_type(Listing::AMENDMENT_TYPE, $this->getTypeDefinition(true));
+
 		add_action('save_post', array($this, 'saveCustomFields'));
 		add_action('save_post', array($this, 'saveEditorialSettings'));
 		add_action('save_post', array($this, 'saveOwnerSettings'));
@@ -141,8 +144,15 @@ class ListingAdmin {
 	}
 
 
-	public function getTypeDefinition() {
-		return array(
+	/**
+	 * Returns the definition for Listing post types. If optional param $amendment is
+	 * true then the definition will be adapted for listing amendments.
+	 *
+	 * @param bool $amendment
+	 * @return array
+	 */
+	public function getTypeDefinition($amendment = false) {
+		$definition = array(
 			'labels' => array(
 				'name' => __('Directory Listings', 'directorium'),
 				'singular_name' => __('Listing', 'directorium'),
@@ -157,15 +167,15 @@ class ListingAdmin {
 				'not_found_in_trash' => __('No listings found in trash', 'directorium'),
 				'parent_item_colon' => '',
 				'menu_name' => __('Directory', 'directorium')),
-			'public' => true,
-			'publicly_queryable' => true,
-			'show_ui' => true,
-			'show_in_menu' => true,
+			'public' => $amendment ? false : true,
+			'publicly_queryable' => $amendment ? false : true,
+			'show_ui' => $amendment ? false : true,
+			'show_in_menu' => $amendment ? false : true,
 			'query_var' => true,
-			'rewrite' =>  array(
+			'rewrite' =>  $amendment ? false : array(
 				'slug' => _x('listing', 'slug', 'directorium')),
 			'capability_type' => 'post',
-			'has_archive' => true,
+			'has_archive' => $amendment ? false : true,
 			'hierarchical' => false,
 			'menu_position' => null,
 			'register_meta_box_cb' => array(
@@ -181,6 +191,11 @@ class ListingAdmin {
 				Listing::TAX_BUSINESS_TYPE,
 				Listing::TAX_GEOGRAPHY,
 				'post_tag'));
+
+		// Other cleanup work for amendments
+		if ($amendment) unset($definition['labels']['menu_name'], $definition['menu_position']);
+
+		return $definition;
 	}
 
 
@@ -270,7 +285,7 @@ class ListingAdmin {
 
 		$listing = new Listing($GLOBALS['post']->ID);
 
-		foreach (self::$customFields as $field)
+		foreach ($this->customFields as $field)
 			if (array_key_exists($field[0], $_POST))
 				$listing->setField($field[0], $_POST[$field[0]]);
 	}
@@ -353,7 +368,7 @@ class ListingAdmin {
 		if (wp_verify_nonce($_POST['directorium_owner_check'], 'directorium_owner_controls') === false) return;
 
 		// Add new owners
-		$ids = Utility::parseCSVidList($_POST['addownerids']);
+		$ids = Data::parseCSVidList($_POST['addownerids']);
 		foreach ($ids as $userID)
 			Owners::addOwnership($userID, $postID);
 
@@ -375,7 +390,7 @@ class ListingAdmin {
 		$listing = $this->getPost($this->getListingID());
 
 		// Make it clear to the user if they are viewed the amended text/fields
-		if ($listing->amendmentIsBeingViewed())
+		if ($this->amendmentIsBeingViewed())
 			$_GET['message'] = self::MSG_VIEWING_AMENDMENT;
 
 		// Inform the user if an amendment is pending (unless another message is waiting)
@@ -386,13 +401,29 @@ class ListingAdmin {
 	}
 
 
+	/**
+	 * If the listing amendment is being viewed returns true.
+	 *
+	 * @return bool
+	 */
+	public function amendmentIsBeingViewed() {
+		$listing = $this->getPost($this->getListingID());
+
+		if (is_numeric($listing->id) and $GLOBALS['pagenow'] === 'post.php'
+			and isset($_GET['loadalternative']) and $_GET['loadalternative'] === 'amendment')
+			return true;
+
+		return false;
+	}
+
+
 	protected function listingEditorMessages() {
 		$messages[Listing::POST_TYPE] = array(
 			self::MSG_PENDING_AMENDMENT => HTML::wrapInDiv(
 				sprintf(__('An amendment has been submitted and is waiting for your attention. <br/> <a href="%s">Review the amendment.</a>',
 					'directorium'), self::getAmendedPostLink()), 'amendment-pending'),
 			self::MSG_VIEWING_AMENDMENT => HTML::wrapInDiv(
-				sprintf(__('<strong>You are currently previewing an amendment.</strong> <br/> You can edit it, publish it or <a href="%s">revert to the currently published version</a>. To publish this version, click the update button.',
+				sprintf(__('<strong>You are currently previewing an amendment.</strong> <br/> You can edit it, publish it or <a href="%s">revert to the currently published version</a>. To publish this version, click the <em>Publish</em> button.',
 					'directorium'), self::getOriginalPostLink()), 'amendment-viewing')
 		);
 
@@ -420,5 +451,25 @@ class ListingAdmin {
 			$this->postID = (int) $GLOBALS['post']->ID;
 
 		return $this->postID;
+	}
+
+
+	/**
+	 * Optionally disable autosaves (post revisions) to avoid confusion, according
+	 * to user preference.
+	 *
+	 * We test to see if it is a Listing post type (regular or amendment) and then
+	 * dequeue the autosave script; there should be no impact on other posts.
+	 */
+	public function controlAutosaves() {
+		global $post_type;
+
+		switch ($post_type) {
+			case Listing::POST_TYPE: case Listing::AMENDMENT_TYPE: break;
+			default: return;
+		}
+
+		if (Core()->settings->get('general.disablePostRevisions'))
+			wp_dequeue_script('autosave');
 	}
 }

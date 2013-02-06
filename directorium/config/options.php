@@ -30,5 +30,13 @@ return array(
 		__('Presentation', 'directorium'),
 		false,
 		$sectionRenderer
+	),
+	'listingeditor' =>  array(
+		array(
+			'general.disablePostRevisions'
+		),
+		__('Editor Settings', 'directorium'),
+		false,
+		$sectionRenderer
 	)
 );

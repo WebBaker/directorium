@@ -1,9 +1,11 @@
 <?php
 namespace Directorium;
+use WP_Query as WP_Query;
 
 
 class Listing {
 	const POST_TYPE = 'directorium_listing';
+	const AMENDMENT_TYPE = 'directorium_amend'; // Shortened to fit in the current 20 char limit
 	const TAX_BUSINESS_TYPE = 'directorium_business_type';
 	const TAX_GEOGRAPHY = 'directorium_geography';
 
@@ -12,6 +14,13 @@ class Listing {
 	public $strippedPostContent = '';
 	public $postAttachments = array();
 	public $postTerms = array();
+
+	protected $amendmentID;
+	protected $amendmentPost;
+
+	protected $originalID;
+	protected $originalPost;
+	protected $isAmendment = false;
 
 
 	public function __construct($id = null) {
@@ -23,6 +32,30 @@ class Listing {
 	protected function load($id) {
 		$this->id = (int) $id;
 		$this->post = get_post($this->id);
+		$this->maybeLoadAmendment();
+	}
+
+
+	/**
+	 * If there is a pending amendment for the post it will exist as a child post of type
+	 * Listing::AMENDMENT_TYPE. This method loads that amendment into memory (if it exists).
+	 */
+	protected function maybeLoadAmendment() {
+		$amendment = new WP_Query(array(
+			'post_parent' => $this->id,
+			'post_type' => self::AMENDMENT_TYPE,
+			'post_status' => 'pending'
+		));
+
+		if ($amendment->have_posts()) {
+			// Accessing the post directly to avoid further cleanup issues caused if the
+			// WP_Query::the_post() is called at this point in the request
+			$post = array_shift($amendment->posts);
+			$this->amendmentID = $post->ID;
+			$this->amendmentPost = $post;
+		}
+
+		wp_reset_query(); // Cleanup
 	}
 
 
@@ -66,13 +99,13 @@ class Listing {
 
 
 	/**
-	 * If the listing is currently a draft then the post itListingAdmin will be amended
+	 * If the listing is currently a draft then the post  will be amended
 	 * to reflect the data passed in.
 	 *
-	 * If the listing is live the data will be saved as meta data, and a flag
-	 * set to indicate that a revision has been submitted. The idea is to
-	 * facilitate a workflow where listees can submit revisions and the
-	 * directory operator can moderate and sanitize them as required.
+	 * If the listing is live the data will be saved as a separate post,
+	 * not publicly visible. The idea is to facilitate a workflow where listees
+	 * can submit revisions and the directory operator can moderate and sanitize
+	 * them as required.
 	 *
 	 * $postdata is expected to be an array containing keys matching any post
 	 * table columns where a change is required.
@@ -108,11 +141,12 @@ class Listing {
 	 * post_content etc) as well as any registered custom fields.
 	 *
 	 * @param array $postdata
+	 * @param string $type Listing::POST_TYPE
 	 * @return bool true on success or false
 	 */
-	public function create(array $postdata) {
+	public function create(array $postdata, $type = self::POST_TYPE) {
 		if (isset($postdata['ID'])) unset($postdata['ID']); // The post ID cannot be dictated
-		$postdata['post_type'] = Listing::POST_TYPE; // We only allow Listings to be created
+		$postdata['post_type'] = $type; // We only allow Listings to be created
 
 		// Try to insert the post - return false on failure and load on success
 		$newID = wp_insert_post($postdata);
@@ -139,7 +173,7 @@ class Listing {
 		foreach ($this->post as $key => $name)
 			if (isset($customfields[$key])) unset($customfields[$key]);
 
-		wp_update_post($postdata); // Update the listing post itListingAdmin
+		wp_update_post($postdata); // Update the listing post
 		$this->updateFields($customfields); // Update any supplied custom fields
 	}
 
@@ -178,7 +212,149 @@ class Listing {
 
 
 	protected function recordAmendmentRequest($postdata) {
-		update_post_meta($this->id, '_directoriumAmendment', $postdata);
+		// Prepare the postdata
+		$postdata = array_merge((array) $this->post, $postdata, array(
+			'post_parent' => $this->id,
+			'post_status' => 'pending',
+			'post_type' => self::AMENDMENT_TYPE
+		));
+
+		// Is this a new amendment?
+		if (!isset($this->amendmentPost)) {
+			unset($postdata['ID']);
+			$amendmentID = wp_insert_post($postdata);
+			$this->clonePostExtras($amendmentID);
+		}
+		else {
+			$amendmentID = $postdata['ID'] = $this->amendmentID;
+			wp_update_post($postdata);
+		}
+	}
+
+
+	/**
+	 * Clones the contents of the listing's primary or published post, so that all
+	 * meta data, attachments and taxonomy terms transfer to the clone post.
+	 *
+	 * @todo consider breaking out the Clone functionality into a new class.
+	 *
+	 * @param $cloneID
+	 */
+	protected function clonePostExtras($cloneID) {
+	    $this->cloneMeta($cloneID);
+		$this->cloneAttachments($cloneID);
+		$this->cloneTerms($cloneID);
+	}
+
+
+	/**
+	 * Copies any attachment entries in the post table and assigns to the clone
+	 * (amendment) post.
+	 *
+	 * @param $cloneID
+	 * @param $sourceID = null
+	 */
+	protected function cloneAttachments($cloneID, $sourceID = null) {
+		$id = ($sourceID === null) ? $this->id : absint($sourceID);
+
+		$attachments = new WP_Query(array(
+			'post_parent' => $id,
+			'post_type' => 'attachment',
+			'post_status' => 'any'
+		));
+
+		if ($attachments->have_posts()) {
+			while (count($attachments->posts) > 0) {
+				// Accessing the post directly to avoid further cleanup issues caused if the
+				// WP_Query::the_post() is called at this point in the request
+				$attachment = (array) array_shift($attachments->posts);
+
+				// Unset the ID (save a copy first of all) and change the parent then re-insert
+				$originalAttachmentID = $attachment['ID'];
+				unset($attachment['ID']);
+				$attachment['post_parent'] = $cloneID;
+				$attachmentID = wp_insert_post($attachment);
+
+				// Copy across attached meta for the attachment
+				$this->cloneMeta($attachmentID, $originalAttachmentID);
+			}
+		}
+
+		wp_reset_query(); // Cleanup
+	}
+
+
+	/**
+	 * Copies the listing meta data to the clone (amendment) post. If no $sourceID is
+	 * specified it is assumed that the meta data must come from the parent listing.
+	 *
+	 * @param $cloneID
+	 * @param $sourceID = null
+	 */
+	protected function cloneMeta($cloneID, $sourceID = null) {
+		$id = ($sourceID === null) ? $this->id : absint($sourceID);
+		$meta = get_post_custom($id);
+
+		foreach ($meta as $key => $data)
+			foreach ($data as $value)
+				add_post_meta($cloneID, $key, Data::makeUnserialized($value));
+	}
+
+
+	/**
+	 * Takes terms from the source object and applies them to the clone object.
+	 *
+	 * @param $cloneID
+	 * @param null $sourceID
+	 */
+	protected function cloneTerms($cloneID, $sourceID = null) {
+		$id = ($sourceID === null) ? $this->id : absint($sourceID);
+		$taxonomies = get_object_taxonomies(get_post($id));
+
+		// Build list of terms by taxonomy
+		$termList = array();
+		foreach (wp_get_object_terms($id, $taxonomies) as $term)
+			$termList[$term->taxonomy][] = absint($term->term_id);
+
+		// Set the terms by taxonomy
+		foreach ($termList as $taxonomy => $termIDs)
+			wp_set_object_terms($cloneID, $termIDs, $taxonomy);
+	}
+
+	/**
+	 * Switches the Listing into amendment mode, so that all of its fields are populated
+	 * with it's amendment equivalents.
+	 *
+	 * @return bool
+	 */
+	public function switchToAmendment() {
+		if (!$this->hasPendingAmendment()) return false; // No amendment data
+		if ($this->isAmendment) return false; // Already in amendment mode
+
+		$this->originalID = $this->id;
+		$this->originalPost = clone $this->post;
+		$this->id = $this->amendmentID;
+		$this->post = clone $this->amendmentPost;
+
+		$this->isAmendment = true;
+		return true;
+	}
+
+
+	/**
+	 * Switches the Listing back into its live/original mode (after having been placed in
+	 * amendment mode).
+	 *
+	 * @return bool
+	 */
+	public function switchToOriginal() {
+		if (!$this->isAmendment) return false; // Not in amendment mode
+
+		$this->id = $this->originalID;
+		$this->post = clone $this->originalPost;
+
+		$this->isAmendment = false;
+		return true;
 	}
 
 
@@ -189,27 +365,38 @@ class Listing {
 	 * @return bool
 	 */
 	public function hasPendingAmendment() {
-		$amendment = get_post_meta($this->id, '_directoriumAmendment', true);
-		return empty($amendment) ? false : true;
-	}
-
-
-	/**
-	 * If the listing amendment is being viewed returns true.
-	 *
-	 * @return bool
-	 */
-	public function amendmentIsBeingViewed() {
-		if (is_numeric($this->id) and $GLOBALS['pagenow'] === 'post.php'
-			and isset($_GET['loadalternative']) and $_GET['loadalternative'] === 'amendment')
-				return true;
-
-		return false;
+		return isset($this->amendmentPost) ? true : false;
 	}
 
 
 	public function getAmendmentData() {
-		return get_post_meta($this->id, '_directoriumAmendment', true);
+		return isset($this->amendmentPost) ? $this->amendmentPost : false;
+	}
+
+
+	/**
+	 * Destroys the amendment post (if it exists) and all associated data.
+	 *
+	 * This is handled using wp_delete_post(), however before that is called the relationship with the
+	 * parent post (the published listing) is zeroed out, to avoid a problem with grandchildren (in this
+	 * case, amendment attachments) being promoted to children (so they are attached to the published
+	 * listing, often resulting in unwanted duplicates.
+	 *
+	 * @see http://codingwith.wordpress.com/2013/02/02/post-hierarchies-and-deleted-children/
+	 *
+	 * @return bool
+	 */
+	public function killAmendment() {
+		if (!$this->hasPendingAmendment()) return false;
+
+		// Break the parent:child relationship
+		wp_update_post(array(
+			'ID' => $this->amendmentID,
+			'post_parent' => 0
+		));
+
+		// Now delete the amendment
+		return wp_delete_post($this->amendmentID) === false ? false : true;
 	}
 
 

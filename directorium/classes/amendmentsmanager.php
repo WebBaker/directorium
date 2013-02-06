@@ -15,9 +15,9 @@ class AmendmentsManager {
 
 	public function __construct() {
 		add_action('admin_head-post.php', array($this, 'flipToAmendment'));
-		add_action('directorium_viewing_listing', array($this, 'flipToAmendment'));
 		add_action('submitpost_box', array($this, 'insertAmendmentMarker'));
-		add_action('save_post', array($this, 'makeAmendmentLive'));
+		add_action('admin_init', array($this, 'saveToAmendment'), 1);
+		add_filter('media_view_settings', array($this, 'useAmendmentIDforUploads'));
 	}
 
 
@@ -33,53 +33,27 @@ class AmendmentsManager {
 		if (!is_a($listing, 'Directorium\\Listing')) {
 			if (!isset($_GET['loadalternative']) or $_GET['loadalternative'] !== 'amendment') return;
 			if (!isset($GLOBALS['post']) or !is_object($GLOBALS['post'])) return;
-			$this->listing = Listing::getPost(Listing::getListingID());
+
+			$listadmin = Core()->listingAdmin;
+			$this->listing = $listadmin->getPost($listadmin->getListingID());
+			$this->listing->switchToAmendment();
 		}
 		else {
 			$this->listing = $listing;
+			$this->listing->switchToAmendment();
 		}
 
-		$this->amendment = $this->listing->getAmendmentData();
+		$this->swapPostFields();
 		$this->isAmendment = true;
-
-		$this->swapPostFields($listing);
-		$this->injectCustomFields();
+		add_filter('get_sample_permalink_html', array($this, 'amendmentSamplePermalink'));
 	}
 
 
 	/**
-	 * Alters any of the post fields for which we have an amendment. Operates on the global
-	 * $post object unless a Listing object is passed in.
+	 * Alters any of the post fields for which we have an amendment.
 	 */
-	protected function swapPostFields($listing = null) {
-		if (!is_a($listing, 'Directorium\\Listing')) global $post;
-		else $post = $listing->post;
-
-		// Change the post object and leave the amendment array only with custom fields
-		foreach ($post as $field => $value)
-			if (isset($this->amendment[$field])) {
-				$post->$field = $this->amendment[$field];
-				unset($this->amendment[$field]);
-			}
-	}
-
-
-	/**
-	 * Places any custom fields held as amendment data into the cache (so that
-	 * they are retrieved when get_post_meta() etc are used).
-	 */
-	protected function injectCustomFields() {
-		if (empty($this->amendment)) return;
-		global $wp_object_cache;
-
-		foreach ($this->amendment as $customfield => $value) {
-			// Prefix any custom fields registered with the Listing class
-			if ($this->listing->isCustomListingField($customfield))
-				$customfield = "_$customfield";
-
-			// Inject into cache
-			$wp_object_cache->cache['post_meta'][$this->listing->id][$customfield] = array($value);
-		}
+	protected function swapPostFields() {
+		$GLOBALS['post'] = $this->listing->post;
 	}
 
 
@@ -87,22 +61,68 @@ class AmendmentsManager {
 	 * Adds a hidden field to help detect when an amendment has been accepted.
 	 */
 	public function insertAmendmentMarker() {
-		if ($this->isAmendment)
-			echo '<input type="hidden" name="directoriumAmendment" value="1" />';
+		if ($this->isAmendment) { // Not an amendment? Leave no marker!
+			$listadmin = Core()->listingAdmin;
+			$this->listing = $listadmin->getPost($listadmin->getListingID());
+			$this->listing->switchToAmendment();
+
+			$id = $this->listing->id;
+			echo '<input type="hidden" name="directoriumAmendment" value="'.$id.'" />';
+		}
 	}
 
 
 	/**
-	 * Removes the amendment meta data, making the newly saved post the de facto
-	 * listing.
+	 * New media uploads will be attached to the primary (published) listing unless we
+	 * modify the media view settings array - which we do here, making the post ID that of
+	 * the amendment.
 	 *
-	 * Expects to be called when the save_post action fires.
+	 * @param array $params
+	 * @return array
 	 */
-	public function makeAmendmentLive() {
-		if (!isset($_POST['directoriumAmendment']) or $_POST['directoriumAmendment'] !== '1' or !isset($_POST['ID']))
-			return;
+	public function useAmendmentIDforUploads($params) {
+		// Only if the amendment has been loaded!
+		if (!isset($_GET['loadalternative']) or $_GET['loadalternative'] !== 'amendment') return $params;
 
-		$postID = absint($_POST['ID']);
-		delete_post_meta($postID, '_directoriumAmendment');
+		if (isset($params['post']['id'])) {
+			$listing = Core()->listingAdmin->getPost($params['post']['id']);
+			$amendment = $listing->getAmendmentData();
+			if (is_int($amendment->ID)) $params['post']['id'] = $amendment->ID;
+		}
+
+		return $params;
+	}
+
+
+	/**
+	 * Make sure if an amendment is saved that it is indeed the amendment and not the published
+	 * listing which is affected.
+	 */
+	public function saveToAmendment() {
+		// We are interested only in amendment save operations (definitely not "publish" operations)
+		if (isset($_POST['publish']) or !isset($_POST['directoriumAmendment']) or !isset($_POST['save'])) return;
+		$originalPostedID = $_POST['post_ID'];
+
+		// Set up the amendment as the current post
+		$_POST['post_ID'] = $_POST['directoriumAmendment'];
+		$this->flipToAmendment(Core()->listingAdmin->getPost($_POST['ID']));
+
+		// Safely spoof the nonce to workaround the switch in post ID
+		check_admin_referer('update-post_'.$originalPostedID);
+		$_REQUEST['_wpnonce'] = wp_create_nonce('update-post_'.$_POST['post_ID']);
+	}
+
+
+	/**
+	 * Modifies the sample permalink (when amendments are being viewed).
+	 *
+	 * @param string $html
+	 * @return string
+	 */
+	public function amendmentSamplePermalink($html) {
+		$startOfURL = strpos($html, '<span');
+		$html = substr($html, 0, $startOfURL);
+		$html .= '<span>'.__('to be determined (you are previewing an emendment)', 'directorium').'</span>';
+		return $html;
 	}
 }

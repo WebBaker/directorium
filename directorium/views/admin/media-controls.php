@@ -1,5 +1,6 @@
 <?php
 use Directorium\Listing as Listing;
+use Directorium\ListingAdmin as ListingAdmin;
 
 wp_nonce_field('directorium_media_controls', 'directorium_media_check');
 
@@ -13,7 +14,7 @@ $videoCount = 0;
 	<?php $imageCount++ ?>
 	<li>
 		<div class="mediapreview">
-			<?php echo wp_get_attachment_image($image->ID, Listing::IMG_PREVIEW_SIZE, false, array(
+			<?php echo wp_get_attachment_image($image->ID, ListingAdmin::IMG_PREVIEW_SIZE, false, array(
 				'title' => esc_attr($image->post_title)
 			)); ?>
 		</div>
