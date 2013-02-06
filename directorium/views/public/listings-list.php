@@ -1,6 +1,4 @@
-<?php
-use Directorium\Listing as Listing;
-?>
+<?php namespace Directorium; ?>
 
 <?php if ($isLoggedIn): ?>
 
@@ -11,7 +9,7 @@ use Directorium\Listing as Listing;
 		<ul> <?php foreach ($listings as $listingID): ?>
 
 			<?php
-				$listing = Listing::getPost($listingID);
+				$listing = Core()->listingAdmin->getPost($listingID);
 				$editorLink = $public->editorLink($listingID);
 			?>
 

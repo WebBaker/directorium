@@ -9,7 +9,7 @@ class URL {
 
 		// Pretty permalinks or ugly? If a question mark exists in $path we can assume ugly
 		if (strpos($path, '?') !== false) {
-			$url = get_site_url().$path.$query;
+			$url = get_home_url().$path.$query;
 		}
 		else {
 			$url = trailingslashit(get_site_url()).$path;

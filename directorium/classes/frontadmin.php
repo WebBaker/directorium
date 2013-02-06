@@ -118,7 +118,7 @@ class FrontAdmin {
 		$editorSlug = Core::$plugin->settings->get('general.editorPage');
 		$editorSlug = trailingslashit($editorSlug);
 		$editorQuery = '?listing='.absint($listingID);
-		$editorURL = trailingslashit(site_url()).$editorSlug.$editorQuery;
+		$editorURL = trailingslashit(home_url()).$editorSlug.$editorQuery;
 		return apply_filters('directorium_editor_link', $editorURL, $listingID);
 	}
 }

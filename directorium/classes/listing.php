@@ -1,5 +1,6 @@
 <?php
 namespace Directorium;
+use Exception as Exception;
 use WP_Query as WP_Query;
 
 
@@ -14,13 +15,14 @@ class Listing {
 	public $strippedPostContent = '';
 	public $postAttachments = array();
 	public $postTerms = array();
+	public $isAmendment = false;
 
 	protected $amendmentID;
 	protected $amendmentPost;
 
 	protected $originalID;
 	protected $originalPost;
-	protected $isAmendment = false;
+
 
 
 	public function __construct($id = null) {
@@ -32,9 +34,32 @@ class Listing {
 	protected function load($id) {
 		$this->id = (int) $id;
 		$this->post = get_post($this->id);
-		$this->maybeLoadAmendment();
+		$this->loadBothVersions();
 	}
 
+
+	/**
+	 * Ensures we have access to both the published/original listing and also the
+	 * amendment, if one exists.
+	 */
+	protected function loadBothVersions() {
+		switch ($this->post->post_type) {
+			case self::POST_TYPE:
+				$this->originalID = $this->id;
+				$this->originalPost = $this->post;
+				$this->maybeLoadAmendment();
+			break;
+			case self::AMENDMENT_TYPE:
+				$this->amendmentID = $this->id;
+				$this->amendmentPost = $this->post;
+				$this->isAmendment = true;
+				$this->loadOriginal();
+			break;
+			default:
+				throw new Exception('Unexpected post type: listing objects can only represent listing post types.');
+			break;
+		}
+	}
 
 	/**
 	 * If there is a pending amendment for the post it will exist as a child post of type
@@ -44,7 +69,7 @@ class Listing {
 		$amendment = new WP_Query(array(
 			'post_parent' => $this->id,
 			'post_type' => self::AMENDMENT_TYPE,
-			'post_status' => 'pending'
+			'post_status' => array('pending', 'draft')
 		));
 
 		if ($amendment->have_posts()) {
@@ -53,6 +78,28 @@ class Listing {
 			$post = array_shift($amendment->posts);
 			$this->amendmentID = $post->ID;
 			$this->amendmentPost = $post;
+		}
+
+		wp_reset_query(); // Cleanup
+	}
+
+
+	/**
+	 * When the object has been initialized using an amendment ID, this method can load in
+	 * the published/original/parent post.
+	 */
+	protected function loadOriginal() {
+		$original = new WP_Query(array(
+			'post_parent' => $this->id,
+			'post_type' => self::AMENDMENT_TYPE
+		));
+
+		if ($original->have_posts()) {
+			// Accessing the post directly to avoid further cleanup issues caused if the
+			// WP_Query::the_post() is called at this point in the request
+			$post = array_shift($original->posts);
+			$this->originalID = $post->ID;
+			$this->originalPost = $post;
 		}
 
 		wp_reset_query(); // Cleanup
@@ -579,7 +626,7 @@ class Listing {
 	public function getCustomFields() {
 		$fieldGroups = array();
 
-		foreach (ListingAdmin::$customFields as $definition) {
+		foreach (Core()->listingAdmin->customFields as $definition) {
 			$field = new Field($definition[0], $definition[1], $definition[2], null, $this->getField($definition[0]));
 			$key = isset($definition[ListingAdmin::FIELD_GROUP]) ? $definition[ListingAdmin::FIELD_GROUP] : 'misc';
 			$fieldGroups[$key][] = $field;

@@ -1,5 +1,6 @@
 <?php
 namespace Directorium;
+use Exception as Exception;
 
 
 class ListingAdmin {
@@ -66,20 +67,26 @@ class ListingAdmin {
 
 
 	/**
-	 * Returns the Listing object relating to the specified post ID.
+	 * Returns the Listing object relating to the specified post ID, or false if the
+	 * specified ID does not relate to a Listing post/amendment.
 	 *
 	 * Allows for reuse of objects instead of generating multiple Listings relating
 	 * to the same post.
 	 *
 	 * @param $id
-	 * @return Listing
+	 * @return mixed Listing | (bool) false
 	 */
 	public function getPost($id) {
 		$id = absint($id);
 		if (isset($this->postInstances[$id])) return $this->postInstances[$id];
 		else {
-			$this->postInstances[$id] = new Listing($id);
-			return $this->postInstances[$id];
+			try {
+				$this->postInstances[$id] = new Listing($id);
+				return $this->postInstances[$id];
+			}
+			catch (Exception $e) {
+				return false;
+			}
 		}
 	}
 
@@ -386,17 +393,44 @@ class ListingAdmin {
 	 * @return array
 	 */
 	public function editorMessages(array $messages) {
-		$messages = array_merge($messages, $this->listingEditorMessages());
+		// Get the current listing
 		$listing = $this->getPost($this->getListingID());
 
-		// Make it clear to the user if they are viewed the amended text/fields
-		if ($this->amendmentIsBeingViewed())
-			$_GET['message'] = self::MSG_VIEWING_AMENDMENT;
+		// If $listing is false then this is not a Listing
+		if ($listing === false) return $messages;
 
-		// Inform the user if an amendment is pending (unless another message is waiting)
-		elseif ($listing->hasPendingAmendment() and !isset($_GET['message']))
-			$_GET['message'] = self::MSG_PENDING_AMENDMENT;
+		// Make all standard post update messages available
+		$msgList = isset($messages['post']) ? (array) $messages['post'] : array();
 
+		// Wrap all existing messages
+		foreach ($msgList as &$notice) $notice = HTML::wrapInDiv($notice, 'post-update-msg');
+
+		$msgList[self::MSG_PENDING_AMENDMENT] = HTML::wrapInDiv(
+			sprintf(__('An amendment has been submitted and is waiting for your attention. <br/> <a href="%s">Review the amendment.</a>',
+				'directorium'), self::getAmendedPostLink()), 'amendment-pending');
+
+		$msgList[self::MSG_VIEWING_AMENDMENT] = HTML::wrapInDiv(
+			sprintf(__('<strong>You are currently previewing an amendment.</strong> <br/> You can edit it, publish it or <a href="%s">revert to the currently published version</a>. To publish this version, click the <em>Publish</em> button.',
+				'directorium'), self::getOriginalPostLink()), 'amendment-viewing');
+
+		// Is a regular (WP) message pending?
+		if (isset($_GET['message']) and isset($msgList[$_GET['message']]))
+			$wpMsg = $_GET['message'];
+
+		// Do we need to show a (directory/amendment) message?
+		if ($this->amendmentIsBeingViewed()) $dirMsg = self::MSG_VIEWING_AMENDMENT;
+		elseif ($listing->hasPendingAmendment()) $dirMsg = self::MSG_PENDING_AMENDMENT;
+
+		// Merge messages is we need to show a regular message plus a directory amendment message
+		if (isset($wpMsg) and isset($dirMsg))
+			$msgList[$wpMsg] .= $msgList[$dirMsg];
+
+		// Or adapt the message var if we only need to show an amendment message
+		elseif (isset($dirMsg) and !isset($wpMsg))
+			$_GET['message'] = $dirMsg;
+
+		// Merge and return
+		$messages[Listing::POST_TYPE] = $msgList;
 		return $messages;
 	}
 
@@ -417,23 +451,10 @@ class ListingAdmin {
 	}
 
 
-	protected function listingEditorMessages() {
-		$messages[Listing::POST_TYPE] = array(
-			self::MSG_PENDING_AMENDMENT => HTML::wrapInDiv(
-				sprintf(__('An amendment has been submitted and is waiting for your attention. <br/> <a href="%s">Review the amendment.</a>',
-					'directorium'), self::getAmendedPostLink()), 'amendment-pending'),
-			self::MSG_VIEWING_AMENDMENT => HTML::wrapInDiv(
-				sprintf(__('<strong>You are currently previewing an amendment.</strong> <br/> You can edit it, publish it or <a href="%s">revert to the currently published version</a>. To publish this version, click the <em>Publish</em> button.',
-					'directorium'), self::getOriginalPostLink()), 'amendment-viewing')
-		);
-
-		return $messages;
-	}
-
-
 	protected function getAmendedPostLink() {
 		$query = array('loadalternative' => 'amendment');
 		$query = array_merge($_GET, $query);
+		unset($query['message']);
 		$path = $GLOBALS['pagenow'].'?'.http_build_query($query);
 		return get_admin_url(null, $path);
 	}

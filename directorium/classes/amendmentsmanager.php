@@ -18,6 +18,7 @@ class AmendmentsManager {
 		add_action('submitpost_box', array($this, 'insertAmendmentMarker'));
 		add_action('admin_init', array($this, 'saveToAmendment'), 1);
 		add_filter('media_view_settings', array($this, 'useAmendmentIDforUploads'));
+		add_action('save_post', array($this, 'disposeOfAmendment'));
 	}
 
 
@@ -124,5 +125,22 @@ class AmendmentsManager {
 		$html = substr($html, 0, $startOfURL);
 		$html .= '<span>'.__('to be determined (you are previewing an emendment)', 'directorium').'</span>';
 		return $html;
+	}
+
+
+	/**
+	 * Once an amendment has been published, dispose of it.
+	 */
+	public function disposeOfAmendment() {
+		// Avoid an infinite loop - killAmendment() uses API functions that trigger the save_post action
+		// which triggers this method
+		remove_action('save_post', array($this, 'disposeOfAmendment'));
+
+		if (isset($_POST['publish']) and isset($_POST['directoriumAmendment'])) {
+			$amendment = Core()->listingAdmin->getPost($_POST['directoriumAmendment']);
+
+			// Be sure it really is an amendment then wipe it out
+			if ($amendment->isAmendment) $amendment->killAmendment();
+		}
 	}
 }

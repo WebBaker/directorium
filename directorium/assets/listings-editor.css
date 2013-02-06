@@ -31,6 +31,16 @@
 	clear: both;
 }
 
+#message div { margin-bottom: 1em; }
+#message div:last-child { margin-bottom: 0em; }
+
+#message .post-update-msg {
+	background: transparent url("crystal-info-help.png") no-repeat center left;
+	padding-left: 40px;
+	margin-left: 10px;
+	height: 30px;
+}
+
 #message .amendment-pending  {
 	background: transparent url("crystal-amendment-pending.png") no-repeat center left;
 	padding-left: 40px;
