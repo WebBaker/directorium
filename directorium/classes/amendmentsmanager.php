@@ -111,6 +111,27 @@ class AmendmentsManager {
 		// Safely spoof the nonce to workaround the switch in post ID
 		check_admin_referer('update-post_'.$originalPostedID);
 		$_REQUEST['_wpnonce'] = wp_create_nonce('update-post_'.$_POST['post_ID']);
+
+		// Take control of the redirect operation
+		add_filter('redirect_post_location', array($this, 'amendmentUpdateRedirect'), 500, 2);
+	}
+
+
+	/**
+	 * If the redirect relates to an amendment, hijack to form the anticipated link.
+	 *
+	 * @param $location
+	 * @param $postID
+	 */
+	public function amendmentUpdateRedirect($location, $postID) {
+		$listing = Core()->listingAdmin->getPost($postID);
+		if ($listing === false or !$listing->isAmendment) return $location;
+
+		$postParam = 'post='.$listing->originalID;
+		$defaultPostParam = 'post='.$postID;
+
+		$location = str_replace($defaultPostParam, $postParam, $location).'&loadalternative=amendment';
+		return $location;
 	}
 
 

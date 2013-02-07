@@ -27,18 +27,41 @@ class Owners {
 	 * @return bool
 	 */
 	public static function hasOwnership($userID, $listingID) {
-		return in_array($listingID, self::getListingsForUser($userID));
+		return in_array($listingID, self::getListingsForUser($userID, true));
 	}
 
 
 	/**
-	 * Returns a (possibly empty) array of listing IDs that the user owns.
+	 * Returns a (possibly empty) array of listing IDs that the user owns. Trashed listings
+	 * will be filtered out.
 	 *
-	 * @param $userID
+	 * Only original/source listings (not amendments) will be returned,
+	 * therefore comparisons should be against $listing->originalID if the Listing object is
+	 * in amendment mode.
+	 *
+	 * @param int $userID
+	 * @param bool $includeAmendments = false
 	 * @return array
 	 */
-	public static function getListingsForUser($userID) {
-		return get_user_meta($userID, self::USER_META, false);
+	public static function getListingsForUser($userID, $includeAmendments = false) {
+		global $wpdb;
+
+		// Get all listings, convert to ints
+		$listingPosts = get_user_meta($userID, self::USER_META, false);
+		foreach ($listingPosts as &$postID) $postID = absint($postID);
+
+		// Form the where clause
+		$where = "( `post_type` ='".Listing::POST_TYPE."' ";
+		if ($includeAmendments) $where .= " OR `post_type` = '".Listing::AMENDMENT_TYPE."'";
+		$where .= " ) AND (`ID` = '".join("' OR `ID` = '", $listingPosts)."')";
+
+		// Filter out trashed posts
+		$results = $wpdb->get_results("SELECT `ID` FROM {$wpdb->posts} WHERE `post_status` != 'trash' AND $where ;");
+
+		$activeListings = array();
+		foreach ($results as $row) $activeListings[] = absint($row->ID);
+
+		return $activeListings;
 	}
 
 

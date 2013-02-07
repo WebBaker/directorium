@@ -4,7 +4,19 @@ use Directorium\View as View;
 ?>
 
 <div class="directorium listing-editor">
+
+	<?php if (isset($errors) and count($errors) >= 1): ?>
+		<ul class="warnings">
+		<?php foreach ($errors as $error): ?>
+			<li><?php esc_html_e($error) ?></li>
+		<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+
 	<form action="<?php esc_attr_e($action) ?>" method="post" enctype="multipart/form-data">
+
+	<?php wp_nonce_field('listingsubmission', 'validatelistingupdate') ?>
+	<input type="hidden" name="listingid" value="<?php esc_attr_e($listing->id) ?>" />
 
 	<section class="title">
 		<label for="listingtitle"> <?php _e('Title', 'directorium') ?> </label>

@@ -17,11 +17,11 @@ class Listing {
 	public $postTerms = array();
 	public $isAmendment = false;
 
-	protected $amendmentID;
-	protected $amendmentPost;
+	public $amendmentID;
+	public $amendmentPost;
 
-	protected $originalID;
-	protected $originalPost;
+	public $originalID;
+	public $originalPost;
 
 
 
@@ -90,8 +90,8 @@ class Listing {
 	 */
 	protected function loadOriginal() {
 		$original = new WP_Query(array(
-			'post_parent' => $this->id,
-			'post_type' => self::AMENDMENT_TYPE
+			'p' => $this->amendmentPost->post_parent,
+			'post_type' => self::POST_TYPE
 		));
 
 		if ($original->have_posts()) {
@@ -146,7 +146,7 @@ class Listing {
 
 
 	/**
-	 * If the listing is currently a draft then the post  will be amended
+	 * If the listing is currently a draft then the post will be amended
 	 * to reflect the data passed in.
 	 *
 	 * If the listing is live the data will be saved as a separate post,
@@ -174,12 +174,12 @@ class Listing {
 		if (!is_array($postdata)) return;
 		$postdata = apply_filters('directoriumSanitizeAmendmentData', $postdata);
 
-		if ($this->post->post_status === 'draft') {
+		/*if ($this->post->post_status === 'draft') {
 			$postdata['post_status'] = 'draft'; // Post status should not alter
 			$this->update($postdata);
-		}
+		}*/
 
-		else $this->recordAmendmentRequest($postdata);
+		/*else */$this->recordAmendmentRequest($postdata);
 	}
 
 
@@ -213,7 +213,7 @@ class Listing {
 
 	protected function update(array $postdata) {
 		$postdata['ID'] = $this->id; // ID will remain unchanged
-		$postdata['post_type'] = Listing::POST_TYPE; // Disallow post type changes
+		unset($postdata['post_type']); // Disallow post type changes
 
 		// Build a list of non-standard post fields (custom fields, basically)
 		$customfields = $postdata;
@@ -251,7 +251,7 @@ class Listing {
 	public function isCustomListingField($key) {
 		static $keyList = array();
 
-		if (empty($keyList)) foreach (ListingAdmin::$customFields as $field)
+		if (empty($keyList)) foreach (Core()->listingAdmin->customFields as $field)
 			$keyList[] = $field[ListingAdmin::FIELD_NAME];
 
 		return in_array($key, $keyList);
@@ -261,7 +261,7 @@ class Listing {
 	protected function recordAmendmentRequest($postdata) {
 		// Prepare the postdata
 		$postdata = array_merge((array) $this->post, $postdata, array(
-			'post_parent' => $this->id,
+			'post_parent' => $this->originalID,
 			'post_status' => 'pending',
 			'post_type' => self::AMENDMENT_TYPE
 		));
@@ -276,6 +276,12 @@ class Listing {
 			$amendmentID = $postdata['ID'] = $this->amendmentID;
 			wp_update_post($postdata);
 		}
+
+		// Reload (and explicitly switch to the amendment)
+		$this->load($amendmentID);
+		$this->switchToAmendment();
+
+		$this->updateFields($postdata);
 	}
 
 
@@ -291,6 +297,7 @@ class Listing {
 	    $this->cloneMeta($cloneID);
 		$this->cloneAttachments($cloneID);
 		$this->cloneTerms($cloneID);
+		$this->cloneOwnership($cloneID);
 	}
 
 
@@ -367,6 +374,23 @@ class Listing {
 		foreach ($termList as $taxonomy => $termIDs)
 			wp_set_object_terms($cloneID, $termIDs, $taxonomy);
 	}
+
+
+	/**
+	 * Takes the assigned owners of the source object and gives them ownership of the
+	 * clone object also.
+	 *
+	 * @param $cloneID
+	 * @param null $sourceID
+	 */
+	protected function cloneOwnership($cloneID, $sourceID = null) {
+		$id = ($sourceID === null) ? $this->id : absint($sourceID);
+
+		// Get source ownership and apply to the clone object
+		$owners = Owners::whoOwnsThis($id);
+		foreach ($owners as $user) Owners::addOwnership($user, $cloneID);
+	}
+
 
 	/**
 	 * Switches the Listing into amendment mode, so that all of its fields are populated
