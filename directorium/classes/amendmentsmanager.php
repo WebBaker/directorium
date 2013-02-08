@@ -106,7 +106,7 @@ class AmendmentsManager {
 
 		// Set up the amendment as the current post
 		$_POST['post_ID'] = $_POST['directoriumAmendment'];
-		$this->flipToAmendment(Core()->listingAdmin->getPost($_POST['ID']));
+		$this->flipToAmendment(Core()->listingAdmin->getPost($_POST['post_ID']));
 
 		// Safely spoof the nonce to workaround the switch in post ID
 		check_admin_referer('update-post_'.$originalPostedID);

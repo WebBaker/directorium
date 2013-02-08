@@ -57,7 +57,7 @@ class ListingAdmin {
 
 	public function __construct() {
 		// Initialize once only
-		if ($this->initalized) return;
+		if ($this->initialized) return;
 		$this->initialized = true;
 
 		add_action('init', array($this, 'registerTaxonomies'), 20);
@@ -380,6 +380,9 @@ class ListingAdmin {
 	public function saveOwnerSettings($postID) {
 		if (empty($_POST) or !is_admin() or !isset($_POST['directorium_fields_check'])) return;
 		if (wp_verify_nonce($_POST['directorium_owner_check'], 'directorium_owner_controls') === false) return;
+
+		// Have any owner IDs been specified (else, ignore)
+		if (!isset($_POST['addownerids'])) return;
 
 		// Add new owners
 		$ids = Data::parseCSVidList($_POST['addownerids']);

@@ -11,6 +11,9 @@ class Data {
 	 * @return array
 	 */
 	public static function parseCSVidList($string) {
+		$string = trim($string);
+		if (empty($string)) return array();
+
 		$elements = self::parseCSV($string);
 
 		foreach ($elements as &$item)

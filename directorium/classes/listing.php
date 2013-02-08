@@ -34,6 +34,11 @@ class Listing {
 	protected function load($id) {
 		$this->id = (int) $id;
 		$this->post = get_post($this->id);
+
+		// It's possible we'll end up with a null value if the post ID does not relate to a listing
+		if (!is_a($this->post, 'WP_Post'))
+			throw new Exception('Failed to initialize listing object. The wrong ID may have been provided.');
+
 		$this->loadBothVersions();
 	}
 

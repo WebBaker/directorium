@@ -51,6 +51,7 @@ class View {
 
 
 	public function __toString() {
+		if ($this->path === null or empty($this->path)) return '';
 		ob_start();
 		if ($this->vars !== null) extract($this->vars);
 		include $this->path;

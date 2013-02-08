@@ -170,7 +170,11 @@ class FrontAdmin {
 		$currentUser = wp_get_current_user();
 		$isLoggedIn = false;
 		$listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
-		$listing = new Listing($listingID);
+		$listing = Core()->listingAdmin->getPost($listingID);
+
+		// Is it a valid listing?
+		if ($listing === false)
+			return new View('listings-editor-404');
 
 		// Load the amended version (if one exists)
 		if ($listing->hasPendingAmendment())
@@ -182,7 +186,7 @@ class FrontAdmin {
 
 		// Does the user have ownership?
 		if (!$isLoggedIn or !Owners::hasOwnership($currentUser->ID, $listing->originalID))
-			return new View('listing-401');
+			return new View('listings-editor-401');
 
 		$tplVars = array(
 			'action' => $this->editorLink($listing->id),

@@ -1,7 +1,4 @@
-<?php
-use Directorium\Listing as Listing;
-use Directorium\View as View;
-?>
+<?php namespace Directorium; ?>
 
 <div class="directorium listing-editor">
 
@@ -42,6 +39,23 @@ use Directorium\View as View;
 	<?php endforeach ?>
 
 	<section class="media images">
+		<label> <?php _e('Attached images', 'directorium') ?> </label>
+
+		<?php
+		$images = $listing->getAttachedImages();
+		foreach ($images as $image)
+			print_r($image);
+		?>
+
+		<div class="imageuploadinputs">
+			<div class="uploadinput">
+				<input type="file" name="newlistingimage[]" size="60" />
+				<img src="<?php esc_attr_e(Core()->url) ?>/assets/nuvola-remove.png" title="<?php esc_attr_e('Remove', 'directorium') ?>" alt="Remove icon" />
+			</div>
+			<div class="actions">
+			</div>
+		</div>
+
 	</section>
 
 	<section class="media videos">
