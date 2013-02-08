@@ -185,7 +185,7 @@ class FrontAdmin {
 			return new View('listing-401');
 
 		$tplVars = array(
-			'action' => $this->getEditorFormAction(),
+			'action' => $this->editorLink($listing->id),
 			'public' => $this,
 			'user' => $currentUser,
 			'isLoggedIn' => $isLoggedIn,
