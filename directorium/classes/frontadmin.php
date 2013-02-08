@@ -12,11 +12,13 @@ class FrontAdmin {
 
 	public function __construct() {
 		add_shortcode('directorium', array($this, 'shortcodeHandler'));
-		$this->listingUpdates();
+		add_filter('directoriumFrontEditorSubmission', array($this, 'submittedTaxonomyTermsFilter'), 10);
+		add_filter('directoriumFrontEditorSubmission', array($this, 'submittedFieldsFilter'), 20);
+		add_action('directoriumInit', array($this, 'listingUpdates'));
 	}
 
 
-	protected function listingUpdates() {
+	public function listingUpdates() {
 		// Safety and sanity checks
 		if (!$this->editorSubmission()) return;
 		if (!$this->hasAuthorityToUpdate()) return;
@@ -66,6 +68,60 @@ class FrontAdmin {
 		unset($this->fields['post_type'], $this->fields['post_parent']);
 
 		$this->fields = apply_filters('directoriumFrontEditorSubmission', $this->fields);
+	}
+
+
+	/**
+	 * Scrutinizes any submitted taxonomy terms, ready for further processing.
+	 *
+	 * @param array $fields
+	 * return array
+	 */
+	public function submittedTaxonomyTermsFilter(array $fields) {
+		$terms = array();
+
+		// Only terms for allowed taxonomies may be submitted
+		$allowedTaxonomies = apply_filters('directoriumAllowedTaxonomies', array(
+			Listing::TAX_BUSINESS_TYPE, Listing::TAX_GEOGRAPHY
+		));
+
+		// Build a list of allowed terms
+		foreach ($allowedTaxonomies as $taxonomy) {
+			if (isset($fields['term-selection'][$taxonomy]))
+				$terms[$taxonomy] = $fields['term-selection'][$taxonomy];
+			// Workaround to allow total clear out of terms:
+			else $terms[$taxonomy] = array(0 => 0);
+		}
+
+		// Discard the original term-selection element
+		unset($fields['term-selection']);
+
+		// Convert term IDs from keys to fields
+		foreach ($terms as $taxonomy => $termList)
+			$terms[$taxonomy] = array_keys($termList);
+
+		// And add back to the array of fields under "taxonomyTerms"
+		$fields['taxonomyTerms'] = $terms;
+		return $fields;
+	}
+
+
+	/**
+	 * Enforces a whitelist approach to submitted form fields (for frontend-submitted amendments).
+	 *
+	 * @param array $fields
+	 * @return array
+	 */
+	public function submittedFieldsFilter(array $fields) {
+		// Derive a list of expected field keys
+		$expected = array('ID', 'post_title', 'post_content', 'taxonomyTerms');
+
+		foreach (Core()->listingAdmin->customFields as $alsoExpected)
+			$expected[] = $alsoExpected[0];
+
+		$expected = apply_filters('directoriumExpectedAmendmentFields', $expected);
+
+		return array_intersect_key($fields, array_flip($expected));
 	}
 
 

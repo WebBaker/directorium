@@ -15,6 +15,8 @@ class ListingAdmin {
 	const MSG_VIEWING_AMENDMENT = 110;
 	const UNLIMITED = -1;
 
+	protected $initialized = false;
+
 	/**
 	 * Container to store and retrieve Listing objects, avoiding the need to
 	 * instantiate new objects unnecessarily.
@@ -54,8 +56,13 @@ class ListingAdmin {
 
 
 	public function __construct() {
+		// Initialize once only
+		if ($this->initalized) return;
+		$this->initialized = true;
+
 		add_action('init', array($this, 'registerTaxonomies'), 20);
 		add_action('init', array($this, 'registerPostTypes'), 30);
+		add_action('init', function() { do_action('directoriumInit'); }, 50);
 		add_action('admin_enqueue_scripts', array($this, 'controlAutosaves'), 5);
 		$this->registerPreviewImageSize();
 

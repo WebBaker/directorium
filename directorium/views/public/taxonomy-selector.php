@@ -13,7 +13,7 @@ $iterator = function($term, $iterator, $level = 0) {
 	if ($level > 0) echo '<span class="level-spacers">'.str_repeat('&ndash;', $level).'</span>';
 
 	// Selection checkbox
-	echo '<input type="checkbox" name="term-selection[term]['.esc_attr($term->term_id).']" value="1" ';
+	echo '<input type="checkbox" name="term-selection['.esc_attr($term->taxonomy).']['.esc_attr($term->term_id).']" value="1" ';
 	if ($term->in_use) echo 'checked="checked" ';
 	echo '/>';
 

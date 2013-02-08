@@ -146,20 +146,14 @@ class Listing {
 
 
 	/**
-	 * If the listing is currently a draft then the post will be amended
-	 * to reflect the data passed in.
+	 * Creates an amendment post in which to hold any changes, prior to approval by a directory
+	 * admin. Most post fields used with wp_update_post() can be used, others are assumed to be
+	 * custom fields.
 	 *
-	 * If the listing is live the data will be saved as a separate post,
-	 * not publicly visible. The idea is to facilitate a workflow where listees
-	 * can submit revisions and the directory operator can moderate and sanitize
-	 * them as required.
+	 * Taxonomy amendments can be specified with a taxonomyTerms key, the value should be an array
+	 * structured like so:
 	 *
-	 * $postdata is expected to be an array containing keys matching any post
-	 * table columns where a change is required.
-	 *
-	 * Optionally, further custom fields can be passed. If they are "known"
-	 * (exist within ListingAdmin::$customFields) then they will be inserted using
-	 * setField() ... others will be created as regular post custom fields.
+	 * [tax_name => [ term_id, term_id, ... ], ... ]
 	 *
 	 * @param array $postdata
 	 * @return mixed (false if doing it wrong)
@@ -174,12 +168,7 @@ class Listing {
 		if (!is_array($postdata)) return;
 		$postdata = apply_filters('directoriumSanitizeAmendmentData', $postdata);
 
-		/*if ($this->post->post_status === 'draft') {
-			$postdata['post_status'] = 'draft'; // Post status should not alter
-			$this->update($postdata);
-		}*/
-
-		/*else */$this->recordAmendmentRequest($postdata);
+		$this->recordAmendmentRequest($postdata);
 	}
 
 
@@ -282,6 +271,26 @@ class Listing {
 		$this->switchToAmendment();
 
 		$this->updateFields($postdata);
+
+		// Optionally update assigned taxonomy terms
+		if (isset($postdata['taxonomyTerms']))
+			$this->updateTaxonomyTerms($amendmentID, $postdata['taxonomyTerms']);
+	}
+
+
+	/**
+	 * Attempts to update assigned taxonomy terms for the specified post. Array
+	 * $taxTerms is expected to be structured with the taxonomy as the key and an
+	 * array of term IDs as the value:
+	 *
+	 * $taxTerms => [ TAX_NAME => [ 1, 2, 3 ... ], TAX_NAME_2 => [ 4, 5, ... ], ... ]
+	 *
+	 * @param $postID
+	 * @param array $taxTerms
+	 */
+	protected function updateTaxonomyTerms($postID, array $taxTerms) {
+		foreach ($taxTerms as $taxonomy => $termIDs)
+	        wp_set_post_terms($postID, $termIDs, $taxonomy, false);
 	}
 
 
