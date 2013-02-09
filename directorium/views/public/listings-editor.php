@@ -1,4 +1,7 @@
-<?php namespace Directorium; ?>
+<?php
+namespace Directorium;
+use Directorium\Helpers\View as View;
+?>
 
 <div class="directorium listing-editor">
 
@@ -13,16 +16,16 @@
 	<form action="<?php esc_attr_e($action) ?>" method="post" enctype="multipart/form-data">
 
 	<?php wp_nonce_field('listingsubmission', 'validatelistingupdate') ?>
-	<input type="hidden" name="listingid" value="<?php esc_attr_e($listing->id) ?>" />
+	<input type="hidden" name="listingid" value="<?php esc_attr_e(stripslashes($listing->id)) ?>" />
 
 	<section class="title">
 		<label for="listingtitle"> <?php _e('Title', 'directorium') ?> </label>
-		<input type="text" name="listingtitle" id="listingtitle" value="<?php esc_attr_e($title) ?>" class="full-width" />
+		<input type="text" name="listingtitle" id="listingtitle" value="<?php esc_attr_e(stripslashes($title)) ?>" class="full-width" />
 	</section>
 
 	<section class="content">
 		<label for="listingcontent"> <?php _e('Your listing content', 'directorium') ?> </label>
-		<textarea name="listingcontent" id="listingcontent" cols="80" rows="10" class="full-width"><?php esc_html_e($content) ?></textarea>
+		<textarea name="listingcontent" id="listingcontent" cols="80" rows="10" class="full-width"><?php esc_html_e(stripslashes($content)) ?></textarea>
 	</section>
 
 	<section class="taxonomies">
@@ -39,23 +42,7 @@
 	<?php endforeach ?>
 
 	<section class="media images">
-		<label> <?php _e('Attached images', 'directorium') ?> </label>
-
-		<?php
-		$images = $listing->getAttachedImages();
-		foreach ($images as $image)
-			print_r($image);
-		?>
-
-		<div class="imageuploadinputs">
-			<div class="uploadinput">
-				<input type="file" name="newlistingimage[]" size="60" />
-				<img src="<?php esc_attr_e(Core()->url) ?>/assets/nuvola-remove.png" title="<?php esc_attr_e('Remove', 'directorium') ?>" alt="Remove icon" />
-			</div>
-			<div class="actions">
-			</div>
-		</div>
-
+		<?php View::write('listings-editor-gallery', array('listing' => $listing)) ?>
 	</section>
 
 	<section class="media videos">

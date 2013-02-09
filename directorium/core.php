@@ -1,5 +1,8 @@
 <?php
 namespace Directorium;
+use Directorium\Helpers;
+use Directorium\Frontend\Frontend as Frontend;
+use Directorium\Frontend\FrontAdmin as FrontAdmin;
 
 
 class Core {

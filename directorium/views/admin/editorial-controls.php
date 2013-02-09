@@ -1,8 +1,8 @@
 <?php
-	use Directorium\Graphics as Graphics;
-	use Directorium\Listing as Listing;
+namespace Directorium;
+use Directorium\Helpers\Graphics as Graphics;
 
-	wp_nonce_field('directorium_editorial_controls', 'directorium_editorial_check')
+wp_nonce_field('directorium_editorial_controls', 'directorium_editorial_check')
 ?>
 
 <div class="directorium">

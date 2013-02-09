@@ -24,6 +24,7 @@ return array(
 	),
 	'presentation' =>  array(
 		array(
+			'presentation.enableDefaultScripts',
 			'presentation.enableDefaultStyles',
 			'presentation.enableThemeStyles'
 		),

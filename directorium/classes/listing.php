@@ -460,6 +460,21 @@ class Listing {
 
 
 	/**
+	 * Reassigns any children (ie, attachments) of the amendment to the original listing post.
+	 */
+	public function transferAttachmentsToOriginal() {
+		$this->switchToAmendment();
+		$attachments = $this->getPostAttachments();
+
+		foreach ($attachments as $attachedPost) {
+			$post = (array) $attachedPost;
+			$post['post_parent'] = $this->originalID;
+			wp_update_post($post);
+		}
+	}
+
+
+	/**
 	 * Destroys the amendment post (if it exists) and all associated data.
 	 *
 	 * This is handled using wp_delete_post(), however before that is called the relationship with the
@@ -482,6 +497,41 @@ class Listing {
 
 		// Now delete the amendment
 		return wp_delete_post($this->amendmentID) === false ? false : true;
+	}
+
+
+	/**
+	 * Attaches an image where $fileIndex refers to the related entry in the $_FILES
+	 * superglobal.
+	 *
+	 * @param $fileIndex
+	 * @param $alt
+	 * @param $title
+	 * @param $caption
+	 */
+	public function attachImage($fileIndex) {
+		if (!isset($_FILES[$fileIndex]) or $_FILES[$fileIndex]['error'] !== UPLOAD_ERR_OK) return false;
+		require_once(ABSPATH.'wp-admin/includes/admin.php');
+		require_once(ABSPATH.'wp-admin/includes/media.php');
+		\media_handle_upload($fileIndex, $this->id);
+	}
+
+
+	public function removeImageAttachments(array $attIDs) {
+		$currentlyAttached = $this->getAttachedImages();
+		$currentAttachments = array();
+
+		// Build a list of currently attached *IDs* only
+		foreach ($currentlyAttached as $attachment)
+			$currentAttachments[] = $attachment->ID;
+
+		foreach ($attIDs as $id) {
+			// Confirm each attachment (to be removed) belongs to this post first of all
+			if (!in_array($id, $currentAttachments)) continue;
+
+			// Remove
+			wp_delete_attachment($id, true);
+		}
 	}
 
 
@@ -540,9 +590,6 @@ class Listing {
 	public function getPostAttachments() {
 		// Ensure a post has been loaded
 		if (!isset($this->post) or !is_a($this->post, 'WP_Post')) return '';
-
-		// If this has already run return the cached content
-		if (!empty($this->postAttachments)) return $this->postAttachments;
 
 		$atts = get_children(array('post_type' => 'attachment', 'post_parent' => $this->id));
 		$this->postAttachments = $atts;

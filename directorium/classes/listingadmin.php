@@ -1,6 +1,10 @@
 <?php
 namespace Directorium;
 use Exception as Exception;
+use Directorium\Helpers\HTML as HTML;
+use Directorium\Helpers\Translatables as Translatables;
+use Directorium\Helpers\View as View;
+
 
 
 class ListingAdmin {
@@ -9,6 +13,7 @@ class ListingAdmin {
 	const MEDIA_CONTROLS = 'directorium_media_meta';
 	const OWNER_CONTROLS = 'directorium_owner_meta';
 	const IMG_PREVIEW_SIZE = 'directorium_preview_thumb';
+	const IMG_PUBLIC_PREVIEW_SIZE = 'directorium_public_preview_thumb';
 	const FIELD_NAME = 0;
 	const FIELD_GROUP = 3;
 	const MSG_PENDING_AMENDMENT = 100;
@@ -64,7 +69,7 @@ class ListingAdmin {
 		add_action('init', array($this, 'registerPostTypes'), 30);
 		add_action('init', function() { do_action('directoriumInit'); }, 50);
 		add_action('admin_enqueue_scripts', array($this, 'controlAutosaves'), 5);
-		$this->registerPreviewImageSize();
+		$this->registerPreviewImageSizes();
 
 		// Enqueue styles for both existing and new posts
 		add_action('admin_print_styles-post.php', array($this, 'editorStyles'));
@@ -213,8 +218,9 @@ class ListingAdmin {
 	}
 
 
-	public function registerPreviewImageSize() {
+	public function registerPreviewImageSizes() {
 		add_image_size(self::IMG_PREVIEW_SIZE, 112, 112);
+		add_image_size(self::IMG_PUBLIC_PREVIEW_SIZE, 145, 145);
 	}
 
 

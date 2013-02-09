@@ -10,6 +10,12 @@ $checkboxRenderer = array($settings, 'printCheckboxField');
  * Format: [ key => [ default, label, validationCallback, renderingCallback ], ... ]
  */
 return array(
+	'enableDefaultScripts' =>  array(
+		true,
+		__('Enable default scripts', 'directorium'),
+		true,
+		$checkboxRenderer
+	),
 	'enableDefaultStyles' =>  array(
 		true,
 		__('Enable default styles', 'directorium'),

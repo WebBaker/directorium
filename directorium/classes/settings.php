@@ -1,5 +1,6 @@
 <?php
 namespace Directorium;
+use Directorium\Helpers\View as View;
 
 
 class Settings {
@@ -253,7 +254,7 @@ class Settings {
 		View::write('settings-field-checkbox', array(
 			'label' => $label,
 			'key' => $data[0],
-			'value' => ($data[1] === '1') ? 1 : 0
+			'value' => $data[1] ? 1 : 0
 		));
 	}
 }

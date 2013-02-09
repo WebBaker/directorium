@@ -1,4 +1,7 @@
 <?php
+/**
+ * @todo move to the Directorium.Helpers namespace
+ */
 namespace Directorium;
 
 

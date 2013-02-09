@@ -1,5 +1,6 @@
 <?php
 namespace Directorium;
+use Directorium\Helpers\View as View;
 
 
 class Importer {

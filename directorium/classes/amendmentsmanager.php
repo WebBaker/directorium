@@ -150,7 +150,8 @@ class AmendmentsManager {
 
 
 	/**
-	 * Once an amendment has been published, dispose of it.
+	 * Once an amendment has been published, dispose of it. We also want to reassign any children (ie,
+	 * attached posts like images) to the published post.
 	 */
 	public function disposeOfAmendment() {
 		// Avoid an infinite loop - killAmendment() uses API functions that trigger the save_post action
@@ -161,7 +162,10 @@ class AmendmentsManager {
 			$amendment = Core()->listingAdmin->getPost($_POST['directoriumAmendment']);
 
 			// Be sure it really is an amendment then wipe it out
-			if ($amendment->isAmendment) $amendment->killAmendment();
+			if ($amendment->isAmendment) {
+				$amendment->transferAttachmentsToOriginal();
+				$amendment->killAmendment();
+			}
 		}
 	}
 }
