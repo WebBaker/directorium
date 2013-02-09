@@ -43,6 +43,7 @@ jQuery(document).ready(function($) {
 	function refreshRemoveActions() {
 		$(".imageuploadinputs .removeimageinput").clearQueue().click(function() {
 			if (countImageInputs() > 1)	$(this).parent("div").remove();
+			toggleAddNewButton();
 		});
 	}
 
