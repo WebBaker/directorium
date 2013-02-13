@@ -8,7 +8,7 @@ use Directorium\Helpers\View as View;
 	<?php if (isset($errors) and count($errors) >= 1): ?>
 		<ul class="warnings">
 		<?php foreach ($errors as $error): ?>
-			<li><?php esc_html_e($error) ?></li>
+			<li><?php echo $error ?></li>
 		<?php endforeach ?>
 		</ul>
 	<?php endif ?>

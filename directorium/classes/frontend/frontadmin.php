@@ -9,6 +9,7 @@ use Directorium\Helpers\View as View;
 class FrontAdmin {
 	const PERMISSION_DENIED = 100;
 	const FILE_UPLOAD_ERROR = 200;
+	const LIMIT_EXCEEDED = 300;
 
 	protected $listing;
 	protected $errors = array();
@@ -241,37 +242,74 @@ class FrontAdmin {
 	protected function editListing() {
 		$currentUser = wp_get_current_user();
 		$isLoggedIn = false;
-		$listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
-		$listing = \Directorium\Core()->listingAdmin->getPost($listingID);
+		$this->listingID = isset($_REQUEST['listing']) ? absint($_REQUEST['listing']) : null;
+		$this->listing = \Directorium\Core()->listingAdmin->getPost($this->listingID);
 
 		// Is it a valid listing?
-		if ($listing === false)
+		if ($this->listing === false)
 			return new View('listings-editor-404');
 
 		// Load the amended version (if one exists)
-		if ($listing->hasPendingAmendment())
-			$listing->switchToAmendment();
+		if ($this->listing->hasPendingAmendment())
+			$this->listing->switchToAmendment();
 
 		// Is the user logged in?
 		if (is_a($currentUser, 'WP_User') and $currentUser->exists())
 			$isLoggedIn = true;
 
 		// Does the user have ownership?
-		if (!$isLoggedIn or !Owners::hasOwnership($currentUser->ID, $listing->originalID))
+		if (!$isLoggedIn or !Owners::hasOwnership($currentUser->ID, $this->listing->originalID))
 			return new View('listings-editor-401');
 
+		// Check if within allowed limits]
+		$this->checkWithinLimits();
+		
 		$tplVars = array(
-			'action' => $this->editorLink($listing->id),
+			'action' => $this->editorLink($this->listing->id),
 			'public' => $this,
 			'user' => $currentUser,
 			'isLoggedIn' => $isLoggedIn,
-			'listing' => $listing,
+			'listing' => $this->listing,
 			'errors' => $this->errors
 		);
 
-		$tplVars = array_merge($tplVars, $this->editorFieldVars($listing));
-		$this->setupJSEditorVars($listing);
+		$tplVars = array_merge($tplVars, $this->editorFieldVars($this->listing));
+		$this->setupJSEditorVars($this->listing);
 		return new View('listings-editor', $tplVars);
+	}
+
+
+	protected function checkWithinLimits() {
+		$outOfBounds = array();
+
+		$wordLimit = $this->listing->getLimit('word');
+		$charLimit = $this->listing->getLimit('char');
+		$btypesLimit = $this->listing->getLimit('btypes');
+		$geosLimit = $this->listing->getLimit('geos');
+		$imgsLimit = $this->listing->getLimit('images');
+
+		if ($wordLimit !== -1 and $wordLimit < $this->listing->getWordCount())
+			$outOfBounds[] = __('Permitted number of words has been exceeded', 'directorium');
+
+		if ($charLimit !== -1 and $charLimit < $this->listing->getCharacterCount())
+			$outOfBounds[] = __('Maximum number of characters has been exceeded', 'directorium');
+
+		if ($btypesLimit !== -1 and $btypesLimit < $this->listing->getTaxonomyCount(Listing::TAX_BUSINESS_TYPE))
+			$outOfBounds[] = __('More business types have been selected than are permitted', 'directorium');
+
+		if ($geosLimit !== -1 and $geosLimit < $this->listing->getTaxonomyCount(Listing::TAX_GEOGRAPHY))
+			$outOfBounds[] = __('More geographies have been selected than are permitted', 'directorium');
+
+		if ($imgsLimit !== -1 and $imgsLimit < $this->listing->getImageCount())
+			$outOfBounds[] = __('Maximum number of attached images has been exceeded', 'directorium');
+
+		$warningList = '<ul>';
+		foreach ($outOfBounds as $issue) $warningList .= '<li>'.$issue.'</li>';
+		$warningList .= '</ul>';
+
+		if (count($outOfBounds) > 0)
+			$this->errors[self::LIMIT_EXCEEDED] = __('One or more limits have been exceeded for this listing; you should '
+				.'review your listing and make appropriate changes. ', 'directorium').$warningList;
 	}
 
 
