@@ -36,6 +36,22 @@
 	width: 45%;
 }
 
+/* Editor editorial controls (word limits, etc) */
+
+.directorium dl.editorialcontrol {
+	font-size: 0.8em;
+	margin: 0;
+}
+
+.directorium dl.editorialcontrol dt,
+.directorium dl.editorialcontrol dd {
+	display: inline-block;
+}
+
+.directorium dl.editorialcontrol dd {
+	margin-right: 1em;
+}
+
 /* Taxomony selector boxes */
 
 .directorium.listing-editor section.taxonomies .tax-selector-box {

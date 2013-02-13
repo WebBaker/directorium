@@ -13,6 +13,12 @@ foreach ($images as $image): ?>
 		<label><?php _e('Remove this image', 'directorium') ?></label>
 	</div>
 <?php endforeach ?>
+	<dl class="editorialcontrol">
+		<?php if ($listing->getLimit('image') > 0): ?>
+			<dt class="imagecount"><?php _e('Image count', 'directorium') ?></dt>
+			<dd class="imagecount"><?php printf(__('%d of %d', 'directorium'), $listing->getImageCount(), $listing->getLimit('image')) ?></dd>
+		<?php endif ?>
+	</dl>
 </div>
 
 <div class="imageuploadinputs">

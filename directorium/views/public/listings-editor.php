@@ -26,11 +26,33 @@ use Directorium\Helpers\View as View;
 	<section class="content">
 		<label for="listingcontent"> <?php _e('Your listing content', 'directorium') ?> </label>
 		<textarea name="listingcontent" id="listingcontent" cols="80" rows="10" class="full-width"><?php esc_html_e(stripslashes($content)) ?></textarea>
+		<dl class="editorialcontrol">
+			<?php if ($listing->getLimit('word') > 0): ?>
+				<dt class="wordcount"><?php _e('Word count', 'directorium') ?></dt>
+				<dd class="wordcount"><?php printf(__('%d of %d', 'directorium'), $listing->getWordCount(), $listing->getLimit('word')) ?></dd>
+			<?php endif ?>
+			<?php if ($listing->getLimit('char') > 0): ?>
+				<dt class="charcount"><?php _e('Character count', 'directorium') ?></dt>
+				<dd class="charcount"><?php printf(__('%d of %d', 'directorium'), $listing->getCharacterCount(), $listing->getLimit('char')) ?></dd>
+			<?php endif ?>
+		</dl>
 	</section>
 
 	<section class="taxonomies">
-		<?php View::write('taxonomy-selector', array('terms' => $listing->annotatedTaxonomyList(Listing::TAX_GEOGRAPHY), 'label' => __('Geography', 'directorium')) ) ?>
-		<?php View::write('taxonomy-selector', array('terms' => $listing->annotatedTaxonomyList(Listing::TAX_BUSINESS_TYPE), 'label' => __('Business Type', 'directorium')) ) ?>
+		<?php View::write('taxonomy-selector', array(
+			'terms' => $listing->annotatedTaxonomyList(Listing::TAX_GEOGRAPHY),
+			'label' => __('Geography', 'directorium'),
+			'listing' => $listing,
+			'limitTerm' => 'geos',
+			'taxonomy' => Listing::TAX_GEOGRAPHY) )
+		?>
+		<?php View::write('taxonomy-selector', array(
+			'terms' => $listing->annotatedTaxonomyList(Listing::TAX_BUSINESS_TYPE),
+			'label' => __('Business Type', 'directorium'),
+			'listing' => $listing,
+			'limitTerm' => 'btypes',
+			'taxonomy' => Listing::TAX_BUSINESS_TYPE) )
+		?>
 	</section>
 
 	<?php foreach ($listing->getCustomFields() as $group): ?>

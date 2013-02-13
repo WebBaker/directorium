@@ -31,7 +31,15 @@ $iterator = function($term, $iterator, $level = 0) {
 <div class="option-box">
 	<label> <?php esc_html_e($label) ?> </label>
 
-	<div class="tax-selector-box">
+	<div class="tax-selector-box<?php esc_attr_e(' '.$limitTerm) ?>">
 		<table> <?php foreach ($terms as $term) $iterator($term, $iterator); ?> </table>
 	</div>
+
+	<dl class="editorialcontrol">
+		<?php if ($listing->getLimit($limitTerm) > 0): ?>
+			<dt class="<?php esc_attr_e($limitTerm) ?>count"><?php _e('Term count', 'directorium') ?></dt>
+			<dd class="<?php esc_attr_e($limitTerm) ?>count"><?php printf(__('%d of %d', 'directorium'), $listing->getTaxonomyCount($taxonomy), $listing->getLimit($limitTerm)) ?></dd>
+		<?php endif ?>
+	</dl>
 </div>
+

@@ -185,8 +185,8 @@ class FrontAdmin {
 			if (strpos($name, 'newlistingimage') !== 0) continue;
 			else $count++;
 
-			// Skip if there was a problem with the file
-			if ($filedata['error'] !== UPLOAD_ERR_OK) {
+			// Skip if there was a problem with the file (or if a file input was empty/unused)
+			if ($filedata['error'] !== UPLOAD_ERR_OK and $filedata['error'] !== UPLOAD_ERR_NO_FILE) {
 				$this->errors[self::FILE_UPLOAD_ERROR] = __('One or more images failed to upload without errors', 'directorium');
 				continue;
 			}
@@ -277,7 +277,12 @@ class FrontAdmin {
 
 	protected function setupJSEditorVars($listing) {
 		ListingData::add(array(
-			'maxImages' => $listing->getLimit('image')
+			'maxChars' => $listing->getLimit('char'),
+			'maxImages' => $listing->getLimit('image'),
+			'maxWords' => $listing->getLimit('word'),
+			'maxGeos' => $listing->getLimit('geos'),
+			'maxBtypes' => $listing->getLimit('btypes'),
+			'usageFormat' => __('%d of %d', 'directorium') // The %d placeholders must survive translation
 		));
 	}
 
