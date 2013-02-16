@@ -53,6 +53,16 @@ class Frontend {
 
 	protected function addScripts() {
 		if ($this->defaultScriptsEnabled)
-			wp_enqueue_script('directoriumDefaultScripts', \Directorium\Core()->url.'assets/directory.js', array('jquery'));
+			wp_enqueue_script('directoriumDefaultScripts', \Directorium\Core()->url.'assets/directory-fronteditor.js', array('jquery'));
+	}
+
+
+	/**
+	 * Generates and returns the "front page" of the directory.
+	 *
+	 * @return string
+	 */
+	public function directoryIndexPage() {
+		return 'Oh hello front page';
 	}
 }

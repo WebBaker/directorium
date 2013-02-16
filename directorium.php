@@ -2,7 +2,7 @@
 /*
 Plugin Name: Directorium
 Description: Customizable directory listings plugin.
-Version: 0.2.1
+Version: 0.2.2
 Author: Barry Hughes
 Author URI: http://freshlybakedwebsites.net
 License: GPL3 or later

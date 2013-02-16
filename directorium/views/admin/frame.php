@@ -1,4 +1,7 @@
-<?php namespace Directorium; ?>
+<?php
+namespace Directorium;
+use Directorium\Helpers\View as View;
+?>
 
 <div class="wrap directorium">
 
@@ -20,4 +23,4 @@
 
 </div>
 
-<script type="text/javascript" src="<?php echo Core::$plugin->url.'/assets/common-admin.js' ?>"></script>
+<script type="text/javascript" src="<?php echo Core()->url.'/assets/common-admin.js' ?>"></script>

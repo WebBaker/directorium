@@ -3,6 +3,7 @@ namespace Directorium;
 use Directorium\Helpers;
 use Directorium\Frontend\Frontend as Frontend;
 use Directorium\Frontend\FrontAdmin as FrontAdmin;
+use Directorium\Frontend\Shortcode as Shortcode;
 
 
 class Core {
@@ -15,6 +16,7 @@ class Core {
 	public $importer;
 	public $frontend;
 	public $frontAdmin;
+	public $shortcode;
 
 
 
@@ -54,6 +56,7 @@ class Core {
 		$this->importer = new Importer;
 		$this->frontend = new Frontend;
 		$this->frontAdmin = new FrontAdmin;
+		$this->shortcode = new Shortcode;
 	}
 }
 

@@ -1,8 +1,12 @@
-<?php wp_nonce_field('importCSVFile', 'directoriumImport'); ?>
+<?php
+namespace Directorium;
+use Directorium\Helpers\View as View;
+wp_nonce_field('importCSVFile', 'directoriumImport');
+?>
 
 <?php
 	if (isset($taxonomyCleanup) and is_array($taxonomyCleanup))
-		Directorium\View::write('cleanup-taxonomies', array('taxonomyCleanup' => $taxonomyCleanup));
+		View::write('cleanup-taxonomies', array('taxonomyCleanup' => $taxonomyCleanup));
  ?>
 
 <table>

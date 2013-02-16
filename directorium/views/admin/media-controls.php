@@ -34,7 +34,7 @@ $videoCount = 0;
 					</td>
 				</tr>
 				<tr>
-					<th scope="col"><?php _e('Caption', 'directorium') ?></th>
+					<th scope="col"><?php _e('Alt text', 'directorium') ?></th>
 					<td colspan="3"><input type="text" class="longfield" name="attachment[<?php esc_attr_e($image->ID) ?>][caption]" value="<?php esc_attr_e($meta['image_meta']['caption']) ?>" /></td>
 				</tr>
 				<tr>

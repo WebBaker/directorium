@@ -71,6 +71,10 @@ class Listing {
 	 * Listing::AMENDMENT_TYPE. This method loads that amendment into memory (if it exists).
 	 */
 	protected function maybeLoadAmendment() {
+		// Clear the amendment properties first of all (in case this is a re-load)
+		$this->amendmentID = $this->amendmentPost = null;
+		$this->isAmendment = false;
+
 		$amendment = new WP_Query(array(
 			'post_parent' => $this->id,
 			'post_type' => self::AMENDMENT_TYPE,
@@ -202,6 +206,22 @@ class Listing {
 		// Update the custom fields and return true
 		$this->updateFields($customfields);
 		return true;
+	}
+
+
+	/**
+	 * Takes the original ("master") listing offline by setting it's post status to "draft".
+	 * This only functions where the post status is at "publish".
+	 */
+	public function takeMasterOffline() {
+		// Remember the current mode
+		$returnToAmendment = $this->isAmendment;
+
+		$this->switchToOriginal();
+		$this->update(array('post_status' => 'draft'));
+
+		// Restore the correct mode
+		if ($returnToAmendment) $this->switchToAmendment();
 	}
 
 
@@ -444,6 +464,16 @@ class Listing {
 
 
 	/**
+	 * Indicates if the master/original is online (published).
+	 *
+	 * @return bool
+	 */
+	public function originalIsOnline() {
+		return ($this->originalPost->post_status === 'publish');
+	}
+
+
+	/**
 	 * Returns true if an amendment has been submitted and requires attention,
 	 * else returns false.
 	 *
@@ -496,7 +526,11 @@ class Listing {
 		));
 
 		// Now delete the amendment
-		return wp_delete_post($this->amendmentID) === false ? false : true;
+		$deleteOperation = wp_delete_post($this->amendmentID) === false ? false : true;
+
+		// Now reload the listing and return the result of the delete operation
+		$this->load($this->originalID);
+		return $deleteOperation;
 	}
 
 

@@ -13,6 +13,14 @@ use Directorium\Helpers\View as View;
 		</ul>
 	<?php endif ?>
 
+	<?php if (isset($notices) and count($notices) >= 1): ?>
+		<ul class="notices">
+			<?php foreach ($notices as $notice): ?>
+				<li><?php echo $notice ?></li>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+
 	<form action="<?php esc_attr_e($action) ?>" method="post" enctype="multipart/form-data">
 
 	<?php wp_nonce_field('listingsubmission', 'validatelistingupdate') ?>
@@ -74,6 +82,16 @@ use Directorium\Helpers\View as View;
 		<input type="submit" name="submit" value="<?php esc_attr_e('Submit', 'directorium') ?>" class="positive-action" />
 		<input type="submit" name="take-offline" value="<?php esc_attr_e('Take offline', 'directorium') ?>" class="dangerous-action" />
 		<input type="submit" name="kill-amendment" value="<?php esc_attr_e('Cancel amendment', 'directorium') ?>" class="requires-caution" />
+	</section>
+
+	<section class="quicklinks">
+		<ul>
+		<?php if ($listing->originalIsOnline()): ?>
+			<li><a href="<?php esc_attr_e(get_permalink($listing->originalID)) ?>">
+				<?php _e('View the current version of the listing', 'directorium') ?>
+			</a></li>
+		<?php endif ?>
+		</ul>
 	</section>
 
 	</form>
